@@ -12,18 +12,13 @@
 $ErrorActionPreference = 'Stop'
 
 # ---------------------------------------------------------------------------
-# TODO(Step 0 完了後): EditMode だけに絞るフラグを確認して埋める。
+# EditMode だけを走らせる。PlayMode まで走ると、開いている Editor が Play モードに
+# 入って人の作業が止まるため（ガイドライン第8章）。
 #
-#   Unity CLI は beta で、リファレンスページには `unity test --help` を見よ、としか
-#   書かれていない。推測で埋めると「PlayMode まで走って Editor が固まる」か
-#   「フラグ不正で毎回 usage error」になるので、確認するまで空にしてある。
-#
-#   確認方法:  unity test --help
-#   埋める例:  $EditModeFlag = @('--platform', 'EditMode')
-#
-#   空のままだと PlayMode テストも走る可能性がある。Step 0 が済んだら必ず埋めること。
+#   確認済み: unity CLI 1.0.0-beta.8 の `unity test --mode EditMode`
+#   Unity CLI は beta なので、動かなくなったら `unity test --help` で確認し直す。
 # ---------------------------------------------------------------------------
-$EditModeFlag = @()
+$EditModeFlag = @('--mode', 'EditMode')
 
 # --- Stop フックの無限ループ防止 -------------------------------------------
 # 既にこのフックが原因で作業が継続されている場合は、もう一度止めない。
@@ -47,9 +42,27 @@ if ($env:CLAUDE_PROJECT_DIR) {
 }
 Set-Location $projectDir
 
-# --- Unity CLI の有無を確認 -------------------------------------------------
-$unity = Get-Command unity -ErrorAction SilentlyContinue
-if (-not $unity) {
+# --- Unity CLI の在り処を決める ---------------------------------------------
+# Claude Code を起動したあとに Unity を入れた場合、プロセスの PATH が古いままで
+# unity が見つからない。これを「未導入」と誤判定するとゲートが黙って素通りし続けるので、
+# レジストリから PATH を読み直し、それでも駄目なら既定の導入先を直接見る。
+try {
+    $machinePath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
+    $userPath    = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+    $env:Path = (@($machinePath, $userPath, $env:Path) | Where-Object { $_ }) -join ';'
+} catch {
+    # レジストリが読めない環境ではそのまま進む
+}
+
+$unityExe = $null
+$found = Get-Command unity -ErrorAction SilentlyContinue
+if ($found) {
+    $unityExe = $found.Source
+} elseif (Test-Path "$env:LOCALAPPDATA/Unity/bin/unity.exe") {
+    $unityExe = "$env:LOCALAPPDATA/Unity/bin/unity.exe"
+}
+
+if (-not $unityExe) {
     Write-Host "[Stop hook] Unity CLI が見つからないので EditMode テストを省略しました。"
     Write-Host "[Stop hook] ロードマップ Step 0 が終わるまでは、この段は機能しません。"
     exit 0
@@ -63,9 +76,16 @@ if (-not (Test-Path (Join-Path $projectDir 'ProjectSettings/ProjectVersion.txt')
 }
 
 # --- EditMode テストを実行 --------------------------------------------------
-Write-Host "[Stop hook] EditMode テストを実行します: unity test $($EditModeFlag -join ' ')"
+# 結果ファイルは Logs/ に書く（.gitignore 済み）。既定のままだとリポジトリ直下に
+# test-results.xml が残り、コミット対象に紛れ込む。
+$resultsPath = Join-Path $projectDir 'Logs\editmode-tests.xml'
+$logsDir = Split-Path $resultsPath
+if (-not (Test-Path $logsDir)) { New-Item -ItemType Directory -Path $logsDir | Out-Null }
 
-$testOutput = & unity test @EditModeFlag 2>&1 | Out-String
+$unityArgs = @('test') + $EditModeFlag + @('--non-interactive', '--no-banner', '--output', $resultsPath)
+Write-Host "[Stop hook] EditMode テストを実行します: unity $($unityArgs -join ' ')"
+
+$testOutput = & $unityExe @unityArgs 2>&1 | Out-String
 $code = $LASTEXITCODE
 
 Write-Host $testOutput

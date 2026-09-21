@@ -43,7 +43,7 @@ D でやることを具体的に書くと、こうなる。
 | **Unity Hub** | Unity 本体の管理。`unity` コマンドもこれと一緒に入る | [unity.com/download](https://unity.com/download) |
 | **Unity 6**<br><sub>Android Build Support 付き</sub> | エディタ本体 | Unity Hub から入れる |
 | **Claude Code** | AI 本体。CLI・VS Code 拡張・デスクトップアプリのどれでもよい | [claude.com/claude-code](https://claude.com/claude-code) |
-| **Unity 公式プラグイン** | Claude Code から Unity を操作するためのもの | 下のコマンドで入れる |
+| **Unity 公式プラグイン** | Claude Code から Unity を操作するためのもの | 下のコマンドで入れる（**設定ファイルだけでは動かない**） |
 | **Meta XR SDK** | Quest 向けの機能と、実機なしで試せるシミュレータ | Unity の中で入れる（手順 A-2） |
 | **Node.js** | 仕様を書くための道具（cc-sdd）を入れるときだけ使う | [nodejs.org](https://nodejs.org) |
 | **Git** | このリポジトリの取得。大きいファイル用に Git LFS も | [git-scm.com](https://git-scm.com) |
@@ -51,29 +51,44 @@ D でやることを具体的に書くと、こうなる。
 
 ### Unity 公式プラグインの入れ方
 
-Claude Code の中で実行する。
+**ターミナル**で実行する（Claude Code の中ではない）。
 
 ```
-/plugin marketplace add Unity-Technologies/unity-agent-plugin
-/plugin install unity@unity-agent-plugin
+claude plugin install unity@claude-plugins-official --scope project
 ```
 
-`/unity:` と打って Unity 用のコマンド一覧が出れば入っている。
+入ったかどうかは `claude plugin list` で確認する。`Status` が `✔` になっていればよい。
+
+> **`.claude/settings.json` に書いてあるだけでは動かない。**
+> このリポジトリには「このプラグインを使う」という設定（`enabledPlugins`）が
+> コミットしてあるが、それは*有効にする*指定であって、実体は各自の PC に入れる必要がある。
+> 入れずに使うと `failed to load` になる。
+>
+> `/plugin` というコマンドが案内されることがあるが、**VS Code 拡張では使えない。**
+> 上のターミナルコマンドを使う。
 
 ### バージョンを揃える
 
 **全員が同じ Unity のバージョンを使う。**違うバージョンで開くと設定ファイルが書き換わり、
 身に覚えのない差分が出る。
 
+動作を確認した組み合わせ:
+
+| | バージョン |
+| --- | --- |
+| Unity | 6000.6.2f1 |
+| Unity CLI | 1.0.0-beta.8 |
+| Unity 公式プラグイン | 0.1.6-beta（`unity@claude-plugins-official`） |
+
+ただし**正はこのリポジトリの中のファイル**。手順 A-2 が終わると下のファイルが作られ、
+それ以降はそちらを見る。受け取った人は、そこに書かれたバージョンを Unity Hub で入れる。
+
 | 何のバージョンか | どこを見るか |
 | --- | --- |
 | Unity 本体 | `ProjectSettings/ProjectVersion.txt` |
 | Meta XR SDK など | `Packages/manifest.json` |
-| Unity 公式プラグイン | Claude Code で `/plugin` |
-
-いまはまだ Unity のプロジェクトが無いので、上2つのファイルは存在しない。
-手順 A-2 が終わると作られ、**それ以降はそのファイルが正**になる。
-受け取った人は、そこに書かれたバージョンを Unity Hub で入れる。
+| Unity CLI | `unity --version` |
+| Unity 公式プラグイン | `claude plugin list` |
 
 ### 注意
 
@@ -91,7 +106,8 @@ Claude Code の中で実行する。
 | Git | 2.45.2 |
 | Node.js | 24.13.1（npx 11.10.1） |
 | GitHub CLI | 2.101.0（リポジトリ作成に使っただけで、必須ではない） |
-| Unity | 未導入（手順 A-1 で入れる） |
+| Unity | 6000.6.2f1（Unity Hub 経由） |
+| Unity CLI | 1.0.0-beta.8 |
 
 </details>
 

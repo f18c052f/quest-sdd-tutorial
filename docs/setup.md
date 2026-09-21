@@ -21,7 +21,7 @@
 | ⬜ | Unity のプロジェクト本体 |
 | ⬜ | AI から Unity を操作するための追加パッケージ |
 | ⬜ | Meta XR SDK と、それを使う置き場所の指定 |
-| ⬜ | テスト自動実行のコマンド確定 |
+| ✅ | テスト自動実行のコマンド確定（`--mode EditMode`） |
 | ⬜ | 仕様を書くための道具（cc-sdd） |
 | ⬜ | 作るものの説明の書き直し（人が書く） |
 
@@ -54,14 +54,20 @@ README の A〜D に対応している。上から順に。
 
 **3. Claude Code を入れ、Unity 公式プラグインを追加する**
 
-Claude Code の中で実行する。
+**ターミナル**で実行する。
 
 ```
-/plugin marketplace add Unity-Technologies/unity-agent-plugin
-/plugin install unity@unity-agent-plugin
+claude plugin install unity@claude-plugins-official --scope project
 ```
 
-`/unity:` と打って Unity 用のコマンド一覧が出れば入っている。
+`claude plugin list` の `Status` が `✔` になれば入っている。
+
+`/plugin ...` という案内を見かけるが、**VS Code 拡張では使えない**（`/plugin isn't
+available in this environment` と出る）。上のターミナルコマンドを使う。
+
+**`.claude/settings.json` に書いてあるだけでは動かない。**このリポジトリには
+`enabledPlugins` がコミットしてあるが、それは*有効にする*指定であって、実体は
+各自の PC に入れる必要がある。入れずに使うと `failed to load` になる。
 
 **4. サインインして確認する**
 
@@ -75,15 +81,18 @@ unity doctor
 
 **5. 入れたバージョンを記録する**
 
-下の表を埋める。Unity のバージョンは手順 A-2 のあと
-`ProjectSettings/ProjectVersion.txt` にも記録されるが、**それ以外はどこにも残らない。**
+Unity のバージョンは手順 A-2 のあと `ProjectSettings/ProjectVersion.txt` にも
+記録されるが、**それ以外はどこにも残らない。**入れたら下の表を更新する。
 
-| | バージョン | 記入日 |
+| | バージョン | 確認日 |
 | --- | --- | --- |
-| Unity Hub | | |
-| Unity | | |
-| Unity CLI（`unity --version`） | | |
-| Unity 公式プラグイン（`/plugin`） | | |
+| Unity | 6000.6.2f1 | 2026-09-21 |
+| Unity CLI（`unity --version`） | 1.0.0-beta.8 | 2026-09-21 |
+| Unity 公式プラグイン（`claude plugin list`） | 0.1.6-beta | 2026-09-21 |
+
+`unity doctor` で `check.windows-long-paths` が `warn` になることがある。
+Unity のプロジェクトはパスが深くなりやすく、Windows の 260 文字制限に当たると
+ビルドが不可解な失敗をする。作業を始める前に長いパスを有効にしておくとよい。
 
 > `unity` コマンドが使えるようになるまで、テスト自動実行のスクリプトは
 > 「Unity CLI が見つからない」と表示して素通りする。エラーにはならないので、
@@ -141,24 +150,22 @@ git push origin setup-1-unity
 
 **最初の機能に入る前に必須。**
 
-```
-unity test --help
-```
-
 テストには2種類ある。Unity を再生せずに走るもの（EditMode）と、実際に再生して走るもの
-（PlayMode）。**自動実行では前者だけを走らせたい。**後者まで走ると Unity が再生状態に入り、
+（PlayMode）。**自動実行では前者だけを走らせる。**後者まで走ると Unity が再生状態に入り、
 人の作業が止まってしまう。
 
-`unity test --help` で EditMode だけに絞るオプションを確認し、
-[`.claude/hooks/run-editmode-tests.ps1`](../.claude/hooks/run-editmode-tests.ps1) の
-`$EditModeFlag` に書き入れる。
+**この設定は済んでいる。**
+[`.claude/hooks/run-editmode-tests.ps1`](../.claude/hooks/run-editmode-tests.ps1) に
+`--mode EditMode` が入っている（Unity CLI 1.0.0-beta.8 で確認）。
+Unity CLI は beta なので、動かなくなったら `unity test --help` で確認し直す。
 
-Unity CLI は beta で、公式ドキュメントにオプション一覧が載っていない。推測で書くと
-「PlayMode まで走って固まる」か「オプション不正で毎回失敗する」のどちらかになるので、
-空のままにしてある。
+残っているのは動作確認だけ。**わざと落ちるテストを1本書いて、AI の作業が
+止まることを確認する。**止まらなければ、この仕組みは名前だけで機能していない。
 
-埋めたら、**わざと落ちるテストを1本書いて、AI の作業が止まることを確認する。**
-止まらなければ、この仕組みは名前だけで機能していない。
+> Claude Code を起動したあとに Unity を入れると、プロセスの PATH が古いままで
+> `unity` が見つからない。スクリプトはレジストリから PATH を読み直し、それでも
+> 駄目なら `%LOCALAPPDATA%/Unity/bin/unity.exe` を直接見るようにしてある。
+> これが無いと、テストが走っていないのに素通りし続ける。
 
 > スクリプトは **UTF-8 BOM 付き**で保存すること。Windows の PowerShell 5.1 は BOM が
 > ないと `.ps1` を別の文字コードとして読み、日本語コメントで構文エラーになる。
