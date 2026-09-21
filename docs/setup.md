@@ -18,7 +18,7 @@
 | ✅ | AI の作業終了時にテストを走らせるスクリプト（Unity CLI が入るまでは何もせず通る） |
 | ✅ | AI が毎回読む決めごと3ファイル（`.kiro/steering/`） |
 | ✅ | 記録シートの雛形、作るものの説明の下書き |
-| ⬜ | Unity のプロジェクト本体 |
+| ⬜ | Unity のプロジェクト本体（手順 A-2） |
 | ⬜ | AI から Unity を操作するための追加パッケージ |
 | ⬜ | Meta XR SDK と、それを使う置き場所の指定 |
 | ✅ | テスト自動実行のコマンド確定（`--mode EditMode`） |
@@ -50,7 +50,26 @@ README の A〜D に対応している。上から順に。
 **2. Unity Hub から Unity 6 を入れる**
 
 **Android Build Support を一緒に選ぶ。** Quest は Android なので、これが無いとビルドできない。
-あとから追加もできるが、忘れると手順 A-2 の途中で詰まる。
+
+**`android` だけでは足りない。** SDK/NDK と OpenJDK が子モジュールになっていて、
+3つ揃わないと実機向けのビルドができない。Unity Hub の画面では `android` に
+チェックを入れると子項目が出てくる。
+
+| モジュール ID | 名前 | ダウンロード |
+| --- | --- | --- |
+| `android` | Android Build Support | 1.24 GB |
+| `android-sdk-ndk-tools` | Android SDK & NDK Tools | 1.12 GB |
+| `android-open-jdk-17.0.18+8` | OpenJDK | 113 MB |
+
+あとから入れる場合、Unity Hub の Installs 画面（歯車 → Add modules）か、CLI で入れる。
+**プロジェクトは要らない。**モジュールは Editor のバージョンに紐づく。
+
+```
+unity install-modules -e 6000.6.2f1 -m android --cm --accept-eula
+```
+
+`--cm` が子モジュールを一緒に入れる指定。入ったかどうかは
+`unity install-modules -e 6000.6.2f1 --list` で確認する。
 
 **3. Claude Code を入れ、Unity 公式プラグインを追加する**
 
@@ -87,8 +106,11 @@ Unity のバージョンは手順 A-2 のあと `ProjectSettings/ProjectVersion.
 | | バージョン | 確認日 |
 | --- | --- | --- |
 | Unity | 6000.6.2f1 | 2026-09-21 |
-| Unity CLI（`unity --version`） | 1.0.0-beta.8 | 2026-09-21 |
+| Unity CLI（`unity --version`） | 1.0.0-beta.10 | 2026-09-21 |
 | Unity 公式プラグイン（`claude plugin list`） | 0.1.6-beta | 2026-09-21 |
+
+**Unity CLI は勝手に上がる。**この手順を進めている最中に beta.8 → beta.10 に
+自動更新された。`unity test` のオプションは変わっていなかったが、変わる前提でいる。
 
 `unity doctor` で `check.windows-long-paths` が `warn` になることがある。
 Unity のプロジェクトはパスが深くなりやすく、Windows の 260 文字制限に当たると

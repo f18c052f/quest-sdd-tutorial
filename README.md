@@ -77,8 +77,13 @@ claude plugin install unity@claude-plugins-official --scope project
 | | バージョン |
 | --- | --- |
 | Unity | 6000.6.2f1 |
-| Unity CLI | 1.0.0-beta.8 |
+| Unity CLI | 1.0.0-beta.10 |
 | Unity 公式プラグイン | 0.1.6-beta（`unity@claude-plugins-official`） |
+
+> **Unity CLI は勝手に上がる。**この骨組みを作っている最中に beta.8 → beta.10 に
+> 自動更新された。オプションが変わることもあるので、動かなくなったら
+> `unity test --help` などで確認し直す。上の表は「この組み合わせで動いた」という記録で、
+> 固定すべき値ではない。
 
 ただし**正はこのリポジトリの中のファイル**。手順 A-2 が終わると下のファイルが作られ、
 それ以降はそちらを見る。受け取った人は、そこに書かれたバージョンを Unity Hub で入れる。
@@ -107,7 +112,7 @@ claude plugin install unity@claude-plugins-official --scope project
 | Node.js | 24.13.1（npx 11.10.1） |
 | GitHub CLI | 2.101.0（リポジトリ作成に使っただけで、必須ではない） |
 | Unity | 6000.6.2f1（Unity Hub 経由） |
-| Unity CLI | 1.0.0-beta.8 |
+| Unity CLI | 1.0.0-beta.10 |
 
 </details>
 
