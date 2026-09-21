@@ -50,20 +50,56 @@ GitHub は保存先としてのみ使う。Issue・Pull Request・GitHub Actions
 最後の振り返りだけは `docs/retrospectives/<名前>.md` として `main` に戻す。
 これを集めることが、本番用ガイドラインの修正材料になる。
 
-### 配布された人へ
+## タグ — どの状態からでも始められる
+
+`main` の節目にタグを打つ。受け取る人は **自分が何を体験したいか** でタグを選び、
+そこから `run/<名前>` を切る。後ろのタグほど準備が進んでいて、早く spec に入れる。
+
+| タグ | 打済 | その時点の状態 | ここから体験できること |
+| --- | --- | --- | --- |
+| `setup-0-skeleton` | ✅ | 骨組みのみ。Unity プロジェクトなし | ロードマップ **Step 0 から**。Unity と Meta XR SDK を自分で入れる。asmdef が Core への `UnityEngine` 持ち込みを本当に止めるか、権限設定がシーンの編集を本当に拒否するかを、自分の手で確かめられる |
+| `setup-1-unity` | ⬜ | Unity + Meta XR SDK + Pipeline + XR asmdef | **Step 3 の準備から**。シミュレータは動く。品質ゲートと cc-sdd をこれから入れるので、ガイドライン第8章の組み立てを自分で作れる |
+| `setup-2-toolchain` | ⬜ | Stop フック稼働 + cc-sdd 導入済み | **SDD のフローから**。ゲートが効いているので「AI の『テストが通りました』を信用しない」を実際に体験できる。外部設計は自分で書く |
+| `setup-3-ready` | ⬜ | 外部設計の確定版あり | **spec を書くところから**。配布の標準形。全員が同じ仕様から始めるので、あとで learning-log を横に並べて比較できる |
+
+### 受け取った人の始め方
 
 ```
-git switch -c run/<自分の名前>
+git clone https://github.com/f18c052f/quest-sdd-tutorial.git
+cd quest-sdd-tutorial
+git switch -c run/<自分の名前> setup-3-ready
 ```
 
-1. Unity Hub でこのフォルダを開く。**セットアップ済みなので Step 2 をやり直さない**
-2. [docs/external/mosquito-spray.md](docs/external/mosquito-spray.md) を読む。これが仕様。書き直さない
+**迷ったら `setup-3-ready`。**Unity と Quest の環境構築そのものを学びたいなら `setup-0-skeleton`。
+打ってあるタグは `git tag -l` で確認する。
+
+そのあとは、
+
+1. Unity Hub でこのフォルダを開く（`setup-1-unity` 以降なら**セットアップ済み。Step 2 をやり直さない**）
+2. [docs/external/mosquito-spray.md](docs/external/mosquito-spray.md) を読む。これが仕様
 3. `git switch -c spec/spray-hit-core` して `/kiro:spec-init` から
 4. spec を閉じるたびに [docs/learning-log.md](docs/learning-log.md) に記録する
 5. 全部終わったら、振り返りを `docs/retrospectives/<名前>.md` にして `main` へ
 
-`npx cc-sdd` を各自で実行しないこと。導入済みのものが `main` に入っている（ガイドライン第4章
-「テックリードが1回だけ導入してコミットする。各自で実行しない」）。
+`setup-2-toolchain` 以降を選んだ人は、**`npx cc-sdd` を各自で実行しないこと。**
+導入済みのものが入っている（ガイドライン第4章「テックリードが1回だけ導入してコミットする。
+各自で実行しない」）。
+
+### タグを打つ側の手順
+
+`main` が節目に達したら、その場で打つ。あとからまとめて打つと、どのコミットが
+どの状態だったか分からなくなる。
+
+```
+git tag -a setup-1-unity -m "Unity 6 + Meta XR SDK + Pipeline + XR asmdef まで"
+git push origin setup-1-unity
+```
+
+| 打つ時機 | タグ |
+| --- | --- |
+| 下の手順4が終わったら | `setup-1-unity` |
+| 手順6が終わったら | `setup-2-toolchain` |
+| 手順7が終わったら | `setup-3-ready` |
 
 ## いまの状態
 
@@ -75,7 +111,7 @@ git switch -c run/<自分の名前>
 | ✅ | asmdef による層の分離（Core / Adapter / XR / Tests.EditMode / Tests.PlayMode） |
 | ✅ | Claude Code の権限設定（シーン・プレハブ・`.meta` の直接編集を拒否） |
 | ✅ | Stop フックのスクリプト（Unity CLI が入るまでは何もせず通る） |
-| ✅ | ステアリング3ファイル（`.kiro/steering/`、合計 279 行 / 上限 400 行） |
+| ✅ | ステアリング3ファイル（`.kiro/steering/`、合計 282 行 / 上限 400 行） |
 | ✅ | 学習ログの雛形、外部設計の下書き |
 | ⬜ | Unity プロジェクト本体（ロードマップ Step 0・2） |
 | ⬜ | `unity pipeline install` |
@@ -128,6 +164,13 @@ Adapter と Core には足さない。Meta XR SDK への依存は XR アセン�
 急がなくてよい。L1 の4本は XR に触らないので、**spray-input-adapter に入る直前**までに
 済んでいればよい。
 
+ここまで終わったらタグを打つ。
+
+```
+git tag -a setup-1-unity -m "Unity 6 + Meta XR SDK + Pipeline + XR asmdef まで"
+git push origin setup-1-unity
+```
+
 ### 5. Stop フックの EditMode フラグを確定する（最初の spec の前に必須）
 
 ```
@@ -161,6 +204,14 @@ git diff -- .kiro/steering/
 
 消えていたら `git checkout -- .kiro/steering/` で戻す。
 
+cc-sdd が入れたコマンド（`.claude/commands/` など）は**コミットする**。
+配布された人が各自で `npx` を叩くとバージョンがずれるため。
+
+```
+git tag -a setup-2-toolchain -m "Stop フック稼働 + cc-sdd 導入済み"
+git push origin setup-2-toolchain
+```
+
 ### 7. 外部設計を書き直す
 
 [docs/external/mosquito-spray.md](docs/external/mosquito-spray.md) は AI の下書き。
@@ -168,6 +219,12 @@ git diff -- .kiro/steering/
 
 書き直した版が `main` の確定版になり、他のメンバーはこれを入力に spec を書く。
 全員が同じ仕様から始めるので、あとで learning-log を横に並べて比較できる。
+
+```
+git tag -a setup-3-ready -m "外部設計の確定版あり。配布の標準形"
+git push origin setup-3-ready
+```
+
 **ここまでが `main`。**次の手順から `run/<名前>` に移る。
 
 ### 8. 最初の spec を始める
