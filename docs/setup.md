@@ -40,16 +40,54 @@ README の A〜D に対応している。上から順に。
 
 ### A-1. Unity と AI 用のツールを入れる
 
-[学習ロードマップ](learning-roadmap.md) の Step 0 のとおり。Unity 6（Android Build Support
-付き）、VS Code、Claude Code の Unity 公式プラグインを入れ、サインインする。
+必要なものの一覧は [README の「必要なもの」](../README.md#必要なもの) にある。
+順に入れる。
+
+**1. Unity Hub を入れる** — [unity.com/download](https://unity.com/download)
+
+`unity` コマンドはこれと一緒に入る。別途インストールは要らない。
+
+**2. Unity Hub から Unity 6 を入れる**
+
+**Android Build Support を一緒に選ぶ。** Quest は Android なので、これが無いとビルドできない。
+あとから追加もできるが、忘れると手順 A-2 の途中で詰まる。
+
+**3. Claude Code を入れ、Unity 公式プラグインを追加する**
+
+Claude Code の中で実行する。
+
+```
+/plugin marketplace add Unity-Technologies/unity-agent-plugin
+/plugin install unity@unity-agent-plugin
+```
+
+`/unity:` と打って Unity 用のコマンド一覧が出れば入っている。
+
+**4. サインインして確認する**
 
 ```
 unity auth login
 unity doctor
 ```
 
-`unity` コマンドが使えるようになるまで、テスト自動実行のスクリプトは
-「Unity CLI が見つからない」と表示して素通りする。エラーにはならない。
+`unity doctor` は環境の不備を一覧で出す。ここで指摘が残っていると、あとの手順で
+原因の分かりにくい失敗をする。先に消しておく。
+
+**5. 入れたバージョンを記録する**
+
+下の表を埋める。Unity のバージョンは手順 A-2 のあと
+`ProjectSettings/ProjectVersion.txt` にも記録されるが、**それ以外はどこにも残らない。**
+
+| | バージョン | 記入日 |
+| --- | --- | --- |
+| Unity Hub | | |
+| Unity | | |
+| Unity CLI（`unity --version`） | | |
+| Unity 公式プラグイン（`/plugin`） | | |
+
+> `unity` コマンドが使えるようになるまで、テスト自動実行のスクリプトは
+> 「Unity CLI が見つからない」と表示して素通りする。エラーにはならないので、
+> ここが済んでいなくても作業は止まらない。
 
 ### A-2. Quest 用に設定する
 
@@ -67,6 +105,10 @@ unity doctor
 
 開いたあと、Unity が `.meta` ファイルを大量に作る。これは**消さずにコミットする**のが正しい。
 Unity がファイルの対応関係を記録しているもので、消すと参照が壊れる。
+
+同時に `ProjectSettings/` と `Packages/manifest.json` も作られる。ここに Unity 本体と
+Meta XR SDK のバージョンが記録される。**受け取った人はこれを見て同じバージョンを入れる**ので、
+どちらも必ずコミットする。以降、バージョンの正はこのファイルになる。
 
 ### A-3. AI から Unity を操作できるようにする
 

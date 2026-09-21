@@ -33,6 +33,68 @@ D でやることを具体的に書くと、こうなる。
 「見た目が自然」のような、テストが書けないことは仕様に書かない。そこは最後に人が手で仕上げる。
 この線引きが実際にどこで崩れるかを見つけるのが、この練習の主眼。
 
+## 必要なもの
+
+どのタグから始める場合でも、**ここに挙げたものは全部要る。**
+リポジトリに入っているのは設定ファイルだけで、ツール本体は各自の PC に入れる。
+
+| | 何に使うか | 入手先 |
+| --- | --- | --- |
+| **Unity Hub** | Unity 本体の管理。`unity` コマンドもこれと一緒に入る | [unity.com/download](https://unity.com/download) |
+| **Unity 6**<br><sub>Android Build Support 付き</sub> | エディタ本体 | Unity Hub から入れる |
+| **Claude Code** | AI 本体。CLI・VS Code 拡張・デスクトップアプリのどれでもよい | [claude.com/claude-code](https://claude.com/claude-code) |
+| **Unity 公式プラグイン** | Claude Code から Unity を操作するためのもの | 下のコマンドで入れる |
+| **Meta XR SDK** | Quest 向けの機能と、実機なしで試せるシミュレータ | Unity の中で入れる（手順 A-2） |
+| **Node.js** | 仕様を書くための道具（cc-sdd）を入れるときだけ使う | [nodejs.org](https://nodejs.org) |
+| **Git** | このリポジトリの取得。大きいファイル用に Git LFS も | [git-scm.com](https://git-scm.com) |
+| VS Code | コードの編集。任意だが、Claude Code の拡張が使える | [code.visualstudio.com](https://code.visualstudio.com) |
+
+### Unity 公式プラグインの入れ方
+
+Claude Code の中で実行する。
+
+```
+/plugin marketplace add Unity-Technologies/unity-agent-plugin
+/plugin install unity@unity-agent-plugin
+```
+
+`/unity:` と打って Unity 用のコマンド一覧が出れば入っている。
+
+### バージョンを揃える
+
+**全員が同じ Unity のバージョンを使う。**違うバージョンで開くと設定ファイルが書き換わり、
+身に覚えのない差分が出る。
+
+| 何のバージョンか | どこを見るか |
+| --- | --- |
+| Unity 本体 | `ProjectSettings/ProjectVersion.txt` |
+| Meta XR SDK など | `Packages/manifest.json` |
+| Unity 公式プラグイン | Claude Code で `/plugin` |
+
+いまはまだ Unity のプロジェクトが無いので、上2つのファイルは存在しない。
+手順 A-2 が終わると作られ、**それ以降はそのファイルが正**になる。
+受け取った人は、そこに書かれたバージョンを Unity Hub で入れる。
+
+### 注意
+
+**Unity CLI は beta、Unity Pipeline パッケージは実験版。**
+コマンド名や引数が予告なく変わることがある。手順どおりに動かないときは、
+まず [公式ドキュメント](https://docs.unity.com/en-us/unity-cli) を見る。
+
+<details>
+<summary>このリポジトリの骨組みを作った環境（うまくいかないときの参考）</summary>
+
+| | |
+| --- | --- |
+| OS | Windows 11 |
+| シェル | PowerShell 5.1 / Git Bash |
+| Git | 2.45.2 |
+| Node.js | 24.13.1（npx 11.10.1） |
+| GitHub CLI | 2.101.0（リポジトリ作成に使っただけで、必須ではない） |
+| Unity | 未導入（手順 A-1 で入れる） |
+
+</details>
+
 ## どこから始めるか
 
 準備の進み具合ごとにタグが打ってある。**どこから自分でやりたいか**で選ぶ。
