@@ -58,6 +58,7 @@ Core だけで閉じる spec を先に作る。シーンを触らないので、
 | --- | --- |
 | `docs/quest-sdd-guideline.md` | 検証の対象にしているガイドライン本体 |
 | `docs/learning-roadmap.md` | 学習の道筋 |
+| `docs/setup.md` | 準備の手順（README の A〜C）。受け取る人向けの README とは読み手が違う |
 | `docs/external/` | 外部設計。**人間だけが書く**。spec より先に書く |
 | `docs/references/` | L4 の参照画像・動画。design.md からはパスで示すだけ |
 | `docs/verification/` | シミュレータでの確認記録 |
