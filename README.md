@@ -33,6 +33,38 @@ GitHub は保存先としてのみ使う。Issue・Pull Request・GitHub Actions
 最後の行が要点。AI はこのループの中の当事者なので、**「どこが守りにくかったか」を AI が
 書くと自己採点になる**。AI が詰まった箇所は報告させるが、判断は人間が持つ。
 
+## 配布とブランチ
+
+この repo は他のメンバーにも配る。**`main` は「全員が同じ起点から始められる状態」に保つ。**
+
+| ブランチ | 中身 | 触るとき |
+| --- | --- | --- |
+| `main` | 骨組み、Unity プロジェクト、Meta XR SDK、cc-sdd、steering、外部設計の確定版、learning-log の雛形 | 骨組みを直すときだけ |
+| `run/<名前>` | その人の実走。spec、実装、記入済み learning-log | 各自 |
+| `spec/<spec>` | `run/<名前>` から切る。閉じたら戻す | 各自 |
+
+分け方の基準は「**誰がやっても同じ結果になるか**」。Unity と SDK のセットアップは誰がやっても
+同じなので `main`（手間を共有する価値がある）。spec と実装は人によって違い、そこに学習がある。
+`main` に入れると、次の人は演習ではなく答えを読むことになる。
+
+最後の振り返りだけは `docs/retrospectives/<名前>.md` として `main` に戻す。
+これを集めることが、本番用ガイドラインの修正材料になる。
+
+### 配布された人へ
+
+```
+git switch -c run/<自分の名前>
+```
+
+1. Unity Hub でこのフォルダを開く。**セットアップ済みなので Step 2 をやり直さない**
+2. [docs/external/mosquito-spray.md](docs/external/mosquito-spray.md) を読む。これが仕様。書き直さない
+3. `git switch -c spec/spray-hit-core` して `/kiro:spec-init` から
+4. spec を閉じるたびに [docs/learning-log.md](docs/learning-log.md) に記録する
+5. 全部終わったら、振り返りを `docs/retrospectives/<名前>.md` にして `main` へ
+
+`npx cc-sdd` を各自で実行しないこと。導入済みのものが `main` に入っている（ガイドライン第4章
+「テックリードが1回だけ導入してコミットする。各自で実行しない」）。
+
 ## いまの状態
 
 骨組みだけがある。**Unity プロジェクトはまだ存在しない**（`Assets/` のフォルダと asmdef だけ先に置いてある）。
@@ -43,7 +75,7 @@ GitHub は保存先としてのみ使う。Issue・Pull Request・GitHub Actions
 | ✅ | asmdef による層の分離（Core / Adapter / XR / Tests.EditMode / Tests.PlayMode） |
 | ✅ | Claude Code の権限設定（シーン・プレハブ・`.meta` の直接編集を拒否） |
 | ✅ | Stop フックのスクリプト（Unity CLI が入るまでは何もせず通る） |
-| ✅ | ステアリング3ファイル（`.kiro/steering/`、合計 262 行 / 上限 400 行） |
+| ✅ | ステアリング3ファイル（`.kiro/steering/`、合計 279 行 / 上限 400 行） |
 | ✅ | 学習ログの雛形、外部設計の下書き |
 | ⬜ | Unity プロジェクト本体（ロードマップ Step 0・2） |
 | ⬜ | `unity pipeline install` |
@@ -134,14 +166,21 @@ git diff -- .kiro/steering/
 [docs/external/mosquito-spray.md](docs/external/mosquito-spray.md) は AI の下書き。
 ガイドラインの鉄則3に従い、**自分の言葉で書き直してから** spec に入る。
 
+書き直した版が `main` の確定版になり、他のメンバーはこれを入力に spec を書く。
+全員が同じ仕様から始めるので、あとで learning-log を横に並べて比較できる。
+**ここまでが `main`。**次の手順から `run/<名前>` に移る。
+
 ### 8. 最初の spec を始める
 
 ```
+git switch -c run/<自分の名前>
 git switch -c spec/spray-hit-core
 ```
 
 `/kiro:spec-init` から。ロードマップ 3-4 の流れで回し、閉じるたびに
 [docs/learning-log.md](docs/learning-log.md) に記録する。
+
+閉じた spec は `run/<名前>` へ squash マージする。**`main` には戻さない。**
 
 ## リポジトリの構成
 

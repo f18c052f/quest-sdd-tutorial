@@ -61,7 +61,8 @@ Core だけで閉じる spec を先に作る。シーンを触らないので、
 | `docs/external/` | 外部設計。**人間だけが書く**。spec より先に書く |
 | `docs/references/` | L4 の参照画像・動画。design.md からはパスで示すだけ |
 | `docs/verification/` | シミュレータでの確認記録 |
-| `docs/learning-log.md` | spec ごとの記録と最後の振り返り。**ハンズオンの成果物** |
+| `docs/learning-log.md` | spec ごとの記録と最後の振り返り。**ハンズオンの成果物**。`run/<名前>` に置く |
+| `docs/retrospectives/` | 各自の振り返りを抜き出したもの。ここだけ `main` に戻す |
 
 `docs/learning-log.md` はステアリングではない。AI が毎回読むものではなく、人間が書き足していく。
 
@@ -86,6 +87,22 @@ PR の代わりにローカルのブランチとコミットを使う。
 | Work Item | `.kiro/specs/<spec>/` そのもの。進行中は `specs`、完了は `archive` |
 | 仕様PR | `spec/<spec>` ブランチの最初のコミット（仕様3ファイルだけ）。コミット前に自分で読み返す |
 | 実装PR | 1〜3タスクごとのコミット |
-| マージ | 全タスク完了後、`main` へ squash マージ |
+| マージ | 全タスク完了後、`run/<名前>` へ squash マージ |
 
 完了した spec は `.kiro/archive/` にすぐ移す。古い仕様を AI が読まないようにするため。
+
+## ブランチ
+
+この repo は他のメンバーにも配布する。**`main` は全員が同じ起点から始められる状態**に保つ。
+
+| ブランチ | 中身 |
+| --- | --- |
+| `main` | 骨組み、Unity プロジェクト、SDK、cc-sdd、steering、外部設計の確定版、learning-log の雛形 |
+| `run/<名前>` | その人の実走。spec、実装、記入済み learning-log |
+| `spec/<spec>` | `run/<名前>` から切る。閉じたら `run/<名前>` へ戻す |
+
+分ける基準は「誰がやっても同じ結果になるか」。同じになるものは `main`、
+人によって違い、そこに学習があるものは `run/<名前>`。
+
+**spec と実装を `main` に入れない。** 入れた時点で、次に受け取る人は演習ではなく答えを読むことになる。
+`main` に戻すのは、骨組みそのものの改善と、最後の振り返り（`docs/retrospectives/<名前>.md`）だけ。
