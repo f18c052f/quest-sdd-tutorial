@@ -23,7 +23,7 @@
 | `Assets/Tests/PlayMode/` | Adapter の PlayMode テスト | EditMode テスト、XR 依存のテスト |
 | `Assets/Scenes/` | シーン | ― |
 | `Assets/Prefabs/` | プレハブ | そのシーンだけの一点もの |
-| `Assets/Settings/` | ScriptableObject にした設定値 | コードの定数でよいもの |
+| `Assets/Settings/` | URP の描画設定アセットと、ゲームの設定値の ScriptableObject | コードの定数でよいもの |
 
 調整しうる数値はコードに直書きせず `Assets/Settings/` の ScriptableObject に出す。
 シーンを薄く保ち、差分を小さくするため。
