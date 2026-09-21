@@ -1,0 +1,52 @@
+# ---- Unity ----
+# Unity が再生成するもの。.meta は追跡するので除外しない。
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Unity が生成する VS / Rider のプロジェクトファイル
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.idea/
+/[Aa]ssets/[Pp]lugins/[Ee]ditor/JetBrains*
+
+# Unity のクラッシュレポート
+sysinfo.txt
+
+# ビルド成果物
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Addressables / Gradle
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# ---- Claude Code ----
+# settings.json はチーム共有の設定なので追跡する。
+# settings.local.json は個人設定なので追跡しない。
+.claude/settings.local.json
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini

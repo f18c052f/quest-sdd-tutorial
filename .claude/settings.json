@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Edit(**/*.unity)",
+      "Write(**/*.unity)",
+      "Edit(**/*.prefab)",
+      "Write(**/*.prefab)",
+      "Edit(**/*.meta)",
+      "Write(**/*.meta)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-editmode-tests.ps1\"",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}

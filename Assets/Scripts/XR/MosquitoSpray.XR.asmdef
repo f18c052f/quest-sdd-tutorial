@@ -1,0 +1,17 @@
+{
+    "name": "MosquitoSpray.XR",
+    "rootNamespace": "MosquitoSpray.XR",
+    "references": [
+        "MosquitoSpray.Core",
+        "MosquitoSpray.Adapter"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
