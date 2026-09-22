@@ -16,6 +16,7 @@
 
 | パス | 置くもの | 置かないもの |
 | --- | --- | --- |
+| `Assets/Editor/` | 準備用の使い捨てスクリプト（パッケージ導入など）。ゲームのコードは置かない | ゲームのロジック |
 | `Assets/Scripts/Core/` | `UnityEngine` に依存しない計算と状態遷移 | MonoBehaviour、GameObject に触る型 |
 | `Assets/Scripts/Adapter/` | MonoBehaviour、Core と GameObject の橋渡し | ドメインの計算、Meta XR SDK の型 |
 | `Assets/Scripts/XR/` | Meta XR SDK に直接触る実装 | ドメインの計算 |

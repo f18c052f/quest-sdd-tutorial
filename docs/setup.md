@@ -141,6 +141,29 @@ Unity がファイルの対応関係を記録しているもので、消すと�
 Meta XR SDK のバージョンが記録される。**受け取った人はこれを見て同じバージョンを入れる**ので、
 どちらも必ずコミットする。以降、バージョンの正はこのファイルになる。
 
+#### Meta XR SDK の入れ方
+
+`com.meta.xr.sdk.core` は **Unity 公式のレジストリにある**。スコープ付きレジストリの
+追加は要らない。
+
+**`Packages/manifest.json` を手で編集しない。** 依存解決が壊れる。Unity の
+PackageManager API 経由で入れる（`Assets/Editor/ProjectBootstrap/PackageInstaller.cs`）。
+
+```
+"<Unity.exe のパス>" -batchmode -projectPath "<このフォルダ>"   -executeMethod ProjectBootstrap.PackageInstaller.Install -logFile install.log
+```
+
+> **バッチモードは Editor を閉じてから実行する。** 開いたままだと
+> `It looks like another Unity instance is running with this project open.`
+> で失敗する。テストの自動実行（`unity test`）が開いている Editor を使うのと逆なので
+> 混同しやすい。**パッケージ操作だけは Editor を閉じる。**
+>
+> 失敗したらログを絞らずに全文を読む。関係のないライセンス警告が先に出るので、
+> それを原因と読み違えやすい。
+
+`-quit` を付けないこと。パッケージの解決は非同期で、`-quit` があると解決を待たずに
+Editor が終了する。スクリプト側が自分で終了コードを返す。
+
 ### A-3. AI から Unity を操作できるようにする
 
 ```
