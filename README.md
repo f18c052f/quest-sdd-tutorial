@@ -49,6 +49,34 @@ D でやることを具体的に書くと、こうなる。
 | **Git** | このリポジトリの取得。大きいファイル用に Git LFS も | [git-scm.com](https://git-scm.com) |
 | VS Code | コードの編集。任意だが、Claude Code の拡張が使える | [code.visualstudio.com](https://code.visualstudio.com) |
 
+### どれが何を可能にするか
+
+名前が似ていて混同しやすいので、**何を入れると何ができるようになるか**を並べておく。
+
+| 入れるもの | できるようになること |
+| --- | --- |
+| Unity Hub | Unity 本体の導入とバージョン管理。`unity` コマンドもこれと一緒に入る |
+| Unity 6 | Editor 本体。ゲームを作る |
+| Android Build Support | **Quest 向けにビルドできる。**Quest は Android なので、無いと apk が作れない |
+| Claude Code | AI がコードを読み書きし、コマンドを実行する |
+| **Unity 公式プラグイン** | **AI が Unity を分かるようになる。**`unity` コマンドと、UI・物理・パッケージ管理などのスキルが入る |
+| **Unity Pipeline パッケージ** | **AI が「起動中の」Editor を操作できるようになる。**シーンにオブジェクトを置く、C# をその場で実行する、テストを走らせる |
+| Meta XR Core SDK | パススルー、カメラリグ、コントローラー入力。Building Blocks もこれ |
+| Meta XR Simulator | **実機なしで**ヘッドセットの見え方を試せる |
+| Node.js | 次の cc-sdd を入れるためだけに使う |
+| cc-sdd | `/kiro:spec-init` など、**仕様を書くためのコマンド**が使えるようになる |
+| Git / Git LFS | 履歴の保存。大きいファイルの扱い |
+
+**公式プラグインと Pipeline パッケージは別物。**ここが一番間違えやすい。
+
+| | 入る場所 | 無いとどうなるか |
+| --- | --- | --- |
+| Unity 公式プラグイン | **Claude Code 側**（各自の PC） | AI が Unity 用のコマンドもスキルも持たない |
+| Unity Pipeline パッケージ | **Unity プロジェクト側**（このリポジトリ） | AI はプロジェクトのファイルは読めるが、**起動中の Editor には触れない** |
+
+両方入って初めて、AI が「Editor を開いたまま、その中のシーンを操作する」ことができる。
+片方だけだと、ファイルの読み書きか、Editor を閉じた状態のバッチ処理までになる。
+
 ### Unity 公式プラグインの入れ方
 
 **ターミナル**で実行する（Claude Code の中ではない）。
