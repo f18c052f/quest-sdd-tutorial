@@ -3,7 +3,8 @@
     "rootNamespace": "MosquitoSpray.XR",
     "references": [
         "MosquitoSpray.Core",
-        "MosquitoSpray.Adapter"
+        "MosquitoSpray.Adapter",
+        "Oculus.VR"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

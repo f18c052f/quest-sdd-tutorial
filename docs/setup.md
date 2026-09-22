@@ -21,7 +21,7 @@
 | ✅ | OpenXR と Meta XR Core SDK、シーンとカメラリグとパススルー | A-2 |
 | ✅ | AI から起動中の Editor を操作する仕組み（Unity Pipeline） | A-3 |
 | ✅ | テスト自動実行のコマンド確定（`unity test --mode EditMode`） | B-5 |
-| ⬜ | Meta XR SDK を使う置き場所の指定 | A-4 |
+| ✅ | Meta XR SDK を使う置き場所の指定（`Oculus.VR`） | A-4 |
 | ⬜ | テスト自動実行が本当に止めるかの確認 | B-5 |
 | ⬜ | 仕様を書くための道具（cc-sdd） | B-6 |
 | ⬜ | 作るものの説明の書き直し（人が書く） | C-7 |
@@ -37,9 +37,29 @@ README の A〜D に対応している。上から順に。
 | C 何を作るか決める | C-7 | `setup-3-ready` を打つ。**ここまでが `main`** |
 | D 作る | D-8 | `run/<名前>` に移る |
 
+### 誰がやるか
+
+各手順の冒頭にも書いてあるが、先に一覧で示す。
+
+| 手順 | 担当 | AI に任せられない理由 |
+| --- | --- | --- |
+| A-1 ツールを入れる | **自分** | GUI のインストーラとブラウザでのサインインがあり、AI は操作できない |
+| A-2 Unity プロジェクト | **両方** | 雛形の作成とファイルの移動は AI。Project Validation の Fix と Building Blocks の配置は Editor の画面操作なので自分 |
+| A-3 Editor 操作の仕組み | **AI** | コマンド1つ。ただし**そのあとの Editor 再起動は自分** |
+| A-4 XR の置き場所指定 | **AI** | 設定ファイルの編集だけ |
+| B-5 テスト自動実行の確認 | **両方** | AI がわざと落ちるテストを書く。止まったかを見るのは自分 |
+| B-6 仕様を書く道具 | **自分** | 全員が同じ版を使うため、入れる人を1人に絞る（ガイドライン第4章） |
+| C-7 作るものの説明 | **自分** | 外部設計は人間が書く（ガイドライン第1章 鉄則3） |
+| D-8 以降の実装 | 層で分ける | [README の「AI と自分の分担」](../README.md#ai-と自分の分担)を見る |
+
+**「AI」と書いてある手順は、Claude Code に「A-3 をやって」と頼めばよい。**
+「自分」と書いてある手順は、下の手順どおりに自分で操作する。
+
 ---
 
 ### A-1. Unity と AI 用のツールを入れる
+
+**担当: 自分。** GUI のインストーラとサインインがあるため、AI は代われない。
 
 必要なものの一覧と、**何を入れると何ができるようになるか**は
 [README の「必要なもの」](../README.md#必要なもの)にある。順に入れる。
@@ -122,6 +142,9 @@ Unity のプロジェクトはパスが深くなりやすく、Windows の 260 �
 > ここが済んでいなくても作業は止まらない。
 
 ### A-2. Quest 用に設定する
+
+**担当: 両方。** 1〜3 は AI に頼める。4（Project Validation）と 5（Building Blocks）は
+Editor の画面操作なので自分でやる。
 
 [学習ロードマップ](learning-roadmap.md) の Step 2。
 
@@ -260,6 +283,11 @@ Android を飛ばしてはいけない理由は2つ。**Android タブの指摘�
 | `Passthrough Camera Visualizer` | 上のデバッグ表示 |
 | `Surface Projected Passthrough` | 面に投影する |
 
+> **シーンに `Main Camera` が残る。** Basic (URP) のシーンに最初からあるもので、
+> Camera Rig を置いても消えない。放っておくと **`AudioListener` が2つ**になり
+> Unity が警告を出す（Camera Rig 側の `CenterEyeAnchor` にも付いているため）。
+> Hierarchy から `Main Camera` を削除する。`Directional Light` は残してよい。
+
 終わると、Meta SDK が次を作る。**`APILayers~` 以外はコミットする。**
 
 | 生成物 | 扱い |
@@ -271,6 +299,8 @@ Android を飛ばしてはいけない理由は2つ。**Android タブの指摘�
 ファイルと同一（ハッシュ一致を確認済み）。SDK が再配置するので追跡しない |
 
 ### A-3. AI から Unity を操作できるようにする
+
+**担当: AI。** ただし**そのあとの Editor 再起動は自分**。
 
 ```
 unity pipeline install
@@ -310,14 +340,54 @@ unity status          # 接続中の Editor が行として出るか
 
 ### A-4. Meta XR SDK を使う置き場所を指定する
 
-`Assets/Scripts/XR/MosquitoSpray.XR.asmdef` の `references` に、Meta XR SDK の
-アセンブリ名を書き足す。SDK が入っていない状態では名前を解決できないので、いまは空にしてある。
+**担当: AI。** 設定ファイルの編集だけなので任せてよい。
+
+**この設定は済んでいる。**`Assets/Scripts/XR/MosquitoSpray.XR.asmdef` の
+`references` に **`Oculus.VR`** が入っている。
+
+Meta XR SDK には50以上のアセンブリがあるが、必要なのはこれ1つ。
+シーンに置かれた `OVRCameraRig` `OVRManager` `OVRPassthroughLayer`、および
+コントローラー入力の `OVRInput` がすべて `Oculus.VR` にある。
+
+| 足したもの | 何のため |
+| --- | --- |
+| `Oculus.VR` | `OVRInput`（トリガー入力）、`OVRPassthroughLayer`、`OVRCameraRig` |
+
+`Meta.XR.BuildingBlocks` は足していない。シーンに置かれた `BuildingBlock` コンポーネントの
+アセンブリだが、こちらのコードから参照しないため。**要るものだけ足す。**
 
 **`Adapter` と `Core` には書き足さない。** Meta XR SDK に依存するコードを
 `Assets/Scripts/XR/` だけに閉じ込めるための指定で、他に広げると意味がなくなる。
 
-急がなくてよい。最初の4機能は Meta XR SDK に触らないので、**5番目の機能
-（コントローラー入力）に入る直前**までに済んでいればよい。
+自分でやる場合は、`.asmdef` の `references` に文字列を1つ足すだけ。
+
+```json
+"references": [
+    "MosquitoSpray.Core",
+    "MosquitoSpray.Adapter",
+    "Oculus.VR"
+]
+```
+
+書いただけでは合っているか分からない。**実際に使うコードを1本書いて、コンパイルが通るか
+確かめる。**確認したら消す。
+
+```csharp
+// Assets/Scripts/XR/Probe.cs（確認後に削除する）
+namespace MosquitoSpray.XR
+{
+    internal static class Probe
+    {
+        internal static bool RightTriggerPressed()
+            => OVRInput.Get(OVRInput.Button.SecondaryIndexTrigger);
+    }
+}
+```
+
+```
+unity command recompile
+unity command recompile_status   # status が completed、errors が空なら通っている
+```
 
 ここまで終わったらタグを打つ。
 
@@ -327,6 +397,8 @@ git push origin setup-1-unity
 ```
 
 ### B-5. テストの自動実行を動くようにする
+
+**担当: 両方。** AI がわざと落ちるテストを書く。止まったかを確認するのは自分。
 
 **最初の機能に入る前に必須。**
 
@@ -351,6 +423,8 @@ Unity CLI は beta なので、動かなくなったら `unity test --help` で�
 > ないと `.ps1` を別の文字コードとして読み、日本語コメントで構文エラーになる。
 
 ### B-6. 仕様を書くための道具を入れる
+
+**担当: 自分。** 全員が同じ版を使うよう、入れる人を1人に絞る（ガイドライン第4章）。
 
 ```
 npx cc-sdd@latest --claude-code --lang ja
@@ -379,6 +453,8 @@ git push origin setup-2-toolchain
 
 ### C-7. 何を作るかを自分の言葉で書く
 
+**担当: 自分。** 外部設計は人間が書く（ガイドライン第1章 鉄則3）。AI に書かせない。
+
 [作るものの説明](external/mosquito-spray.md) は AI が書いた下書き。
 **自分の言葉で書き直してから**次に進む。
 
@@ -397,6 +473,8 @@ git push origin setup-3-ready
 **ここまでが `main`。** 次から `run/<名前>` に移る。
 
 ### D-8. 最初の機能を作る
+
+**担当: 層で分ける。** [README の「AI と自分の分担」](../README.md#ai-と自分の分担)を見る。
 
 ```
 git switch -c run/<自分の名前>
