@@ -124,15 +124,48 @@ Unity のプロジェクトはパスが深くなりやすく、Windows の 260 �
 
 [学習ロードマップ](learning-roadmap.md) の Step 2。
 
-**Unity Hub で新規作成せず、このフォルダをそのまま開く。**
-置き場所の境界を決めるファイルが既に置いてあるので、開いた時点でそれが効く。
-新規作成すると、それらが別の場所にできてしまう。
+やることは5つ。それぞれ下に手順がある。
 
-1. Unity Hub → Add → このフォルダを選ぶ（Unity 6、3D テンプレート相当）
-2. OpenXR を有効にし、Meta XR Core SDK を入れる
-3. Project Setup Tool（設定の不備を指摘してくれる画面）の指摘をすべて消す
-4. Building Blocks から、カメラとパススルーをドラッグして追加する
-5. Meta XR Simulator を入れ、ツールバーから有効にする
+1. Unity のプロジェクトとして成立させる
+2. OpenXR を有効にする
+3. Meta XR Core SDK を入れる
+4. Project Validation の指摘を消す
+5. シーンを作り、Building Blocks でカメラとパススルーを置く
+
+（Meta XR Simulator は B 段階で入れる）
+
+#### 1. Unity のプロジェクトとして成立させる
+
+**`setup-1-unity` 以降のタグから始めた人は、この節を飛ばす。**
+`unity open <このフォルダ>` で開けば済む。
+
+`setup-0-skeleton` から始めた人だけ、ここを行う。このフォルダには `Assets/` しか無く
+`ProjectSettings/` が無いので、**Unity Hub の Add では認識されない。**
+別の場所に雛形を作り、設定だけを持ってくる。
+
+```
+unity projects create UrpScaffold --path <一時フォルダ>   --editor-version 6000.6.2f1 --template com.unity.template.urp-blank --no-cloud
+```
+
+**テンプレートは Universal 3D（URP）を使う。** Quest は URP が標準で、
+Built-In Render Pipeline は使わない。
+
+雛形から、このフォルダへ次をコピーする。
+
+| コピーするもの | 理由 |
+| --- | --- |
+| `ProjectSettings/` | Unity のバージョンと各種設定。`.meta` を持たない |
+| `Packages/` | パッケージの一覧 |
+| `Assets/Settings/` の `.asset` と `.meta` 7個 | URP の描画設定。**無いとマテリアルが全部ピンクになる** |
+
+雛形の `TutorialInfo/`・`Readme.asset`・`SampleScene.unity`・`InputSystem_Actions.inputactions`
+は**持ってこない**。シーンは後で自分で作る。
+
+最後に Hub に登録しておく。しないと `unity open` のたびに警告が出る。
+
+```
+unity projects add <このフォルダ>
+```
 
 開いたあと、Unity が `.meta` ファイルを大量に作る。これは**消さずにコミットする**のが正しい。
 Unity がファイルの対応関係を記録しているもので、消すと参照が壊れる。
@@ -141,7 +174,12 @@ Unity がファイルの対応関係を記録しているもので、消すと�
 Meta XR SDK のバージョンが記録される。**受け取った人はこれを見て同じバージョンを入れる**ので、
 どちらも必ずコミットする。以降、バージョンの正はこのファイルになる。
 
-#### Meta XR SDK の入れ方
+#### 2. OpenXR を有効にする
+
+Project Settings → XR Plug-in Management で、**Windows と Android の両タブ**の
+OpenXR にチェックを入れる。両方に要る理由は次の節で書く。
+
+#### 3. Meta XR Core SDK を入れる
 
 `com.meta.xr.sdk.core` は **Unity 公式のレジストリにある**。スコープ付きレジストリの
 追加は要らない。
@@ -163,6 +201,73 @@ PackageManager API 経由で入れる（`Assets/Editor/ProjectBootstrap/PackageI
 
 `-quit` を付けないこと。パッケージの解決は非同期で、`-quit` があると解決を待たずに
 Editor が終了する。スクリプト側が自分で終了コードを返す。
+
+#### 4. Project Validation の指摘を消す
+
+Meta SDK が入ると、`Meta` → `Tools` → `Project Setup Tool` に設定の不備が並ぶ。
+タブがプラットフォームごとに分かれている。**両方直す。**
+
+| タブ | 何を決めるか | 必要度 |
+| --- | --- | --- |
+| Windows（PC, Mac & Linux Standalone） | **Editor の Play モード**。シミュレータで動かすのはこれ | 必須 |
+| Android | Quest 実機向けの apk | 直接は効かないが直す |
+
+Android を飛ばしてはいけない理由は2つ。**Android タブの指摘にはプロジェクト全体の設定が
+混ざっている**（Color Space を Linear にする項目など）ので、Windows での見え方にも影響する。
+もう1つは `ProjectSettings.asset` がコミットされて配布されるので、直しておけば
+受け取った人が直った状態から始められる。
+
+> **消えない警告が2件残る。これは正常。**
+>
+> ```
+> [Meta XR Feature] This OpenXR Feature targets an API version with a patch
+> version lower than 1.1.54 ... The requested API version will be ignored.
+> ```
+>
+> OpenXR パッケージ側は条件を満たしている（loader 1.1.54 は `com.unity.xr.openxr`
+> 1.17.0-pre.2 から入り、こちらは 1.18.0）。**Meta SDK の Feature が古い API を
+> 要求していて、それが無視される**という意味なので、安全側に倒れている。
+> Meta SDK が追従するまで消えない。エラーではなく警告なので、このまま進めてよい。
+
+#### 5. シーンを作り、Building Blocks でカメラとパススルーを置く
+
+**先にシーンを作る。**
+
+1. `File` → `New Scene` → **Basic (URP)** を選ぶ
+2. `Assets/Scenes/Game.unity` として保存する
+
+このプロジェクトは**シーンを1つだけ**にする決まりなので、名前は `Game` にする
+（`.kiro/steering/structure.md`）。
+
+**次に Building Blocks。**
+
+1. `Meta` → `Tools` → `Building Blocks` を開く
+2. 一覧から **`Camera Rig`** を探す
+3. **サムネイルを Hierarchy ウィンドウにドラッグ&ドロップ**する
+4. 同じ要領で **`Passthrough`** を追加する
+
+**`Camera Rig` を先に入れる。** `Passthrough` は単独では動かない。
+
+パススルー系のブロックは6つあって紛らわしい。**`Passthrough` を選ぶ。**
+
+| ブロック名 | 用途 |
+| --- | --- |
+| **`Passthrough`** | **部屋が見える基本のパススルー。これ** |
+| `Passthrough Overlay` | パススルーを重ねて表示する |
+| `Passthrough Window` | 壁に穴を開けたような表示 |
+| `Passthrough Camera Access` | カメラ映像をコードから取る |
+| `Passthrough Camera Visualizer` | 上のデバッグ表示 |
+| `Surface Projected Passthrough` | 面に投影する |
+
+終わると、Meta SDK が次を作る。**`APILayers~` 以外はコミットする。**
+
+| 生成物 | 扱い |
+| --- | --- |
+| `Assets/Oculus/OculusProjectConfig.asset` | コミット。Quest 向けの設定 |
+| `Assets/Plugins/Android/AndroidManifest.xml` | コミット。実機の権限設定 |
+| `Assets/Resources/*.asset` | コミット。実行時の設定 |
+| `Assets/XR/APILayers~/` | **`.gitignore` 済み。**7MB の DLL で、中身はパッケージ内の
+ファイルと同一（ハッシュ一致を確認済み）。SDK が再配置するので追跡しない |
 
 ### A-3. AI から Unity を操作できるようにする
 

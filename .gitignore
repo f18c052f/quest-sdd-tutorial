@@ -39,6 +39,11 @@ sysinfo.txt
 *.unitypackage
 *.app
 
+# Meta XR Operator の API レイヤー。SDK がパッケージ内からコピーして配置するもので、
+# 中身はパッケージ内のファイルと同一（7MB の DLL）。Unity は `~` 付きフォルダを
+# 読み込まないので .meta も無い。各自の SDK が再配置するため追跡しない。
+/[Aa]ssets/XR/APILayers~/
+
 # Addressables / Gradle
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
