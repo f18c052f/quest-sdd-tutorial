@@ -2,8 +2,12 @@
   品質ゲート 1段目（ガイドライン第8章）— Stop フック
 
   AI が作業を終えようとしたときに EditMode テストを走らせ、落ちていれば完了させない。
-  「テストが通りました」という AI の自己申告を信用しないための仕組みなので、
-  このスクリプトの判定は必ず unity の終了コードだけで行い、出力の文面では判断しない。
+  「テストが通りました」という AI の自己申告を信用しないための仕組み。
+
+  【このスクリプトの鉄則】
+  結果が取れなかったときは、黙って通さない。
+  「実行できなかった」を「問題なし」として扱った瞬間、この仕組みは名前だけになる。
+  例外はロードマップ Step 0 / Step 2 が未完のときだけ（下の 2 箇所）。
 
   PlayMode テストはここでは回さない。開いている Editor が Play モードに入り、
   人間の作業を止めてしまうため（ガイドライン第8章）。PlayMode は Test Runner から手動で流す。
@@ -11,14 +15,16 @@
 
 $ErrorActionPreference = 'Stop'
 
-# ---------------------------------------------------------------------------
-# EditMode だけを走らせる。PlayMode まで走ると、開いている Editor が Play モードに
-# 入って人の作業が止まるため（ガイドライン第8章）。
-#
-#   確認済み: unity CLI 1.0.0-beta.8 の `unity test --mode EditMode`
-#   Unity CLI は beta なので、動かなくなったら `unity test --help` で確認し直す。
-# ---------------------------------------------------------------------------
-$EditModeFlag = @('--mode', 'EditMode')
+# --- 文字コード -------------------------------------------------------------
+# Unity CLI は UTF-8 で出力するが、Windows PowerShell の既定は CP932。
+# そのままだと日本語のテスト名が壊れ、返ってきた JSON が解析できなくなる
+# （閉じ引用符が消えて別物になる）。判定の入り口なので必ず先に直す。
+try {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+} catch {
+    # 変更できない環境でも先へ進む
+}
 
 # --- Stop フックの無限ループ防止 -------------------------------------------
 # 既にこのフックが原因で作業が継続されている場合は、もう一度止めない。
@@ -62,61 +68,160 @@ if ($found) {
     $unityExe = "$env:LOCALAPPDATA/Unity/bin/unity.exe"
 }
 
+# ここで素通りさせてよいのは、ロードマップ Step 0 がまだ終わっていないときだけ。
 if (-not $unityExe) {
     Write-Host "[Stop hook] Unity CLI が見つからないので EditMode テストを省略しました。"
     Write-Host "[Stop hook] ロードマップ Step 0 が終わるまでは、この段は機能しません。"
     exit 0
 }
 
-# --- Unity プロジェクトとして成立しているかを確認 ---------------------------
+# ここで素通りさせてよいのは、ロードマップ Step 2 がまだ終わっていないときだけ。
 if (-not (Test-Path (Join-Path $projectDir 'ProjectSettings/ProjectVersion.txt'))) {
     Write-Host "[Stop hook] Unity プロジェクトがまだありません（ProjectSettings/ が無い）。"
     Write-Host "[Stop hook] ロードマップ Step 2 でこのフォルダを Unity Hub から開いてください。"
     exit 0
 }
 
-# --- EditMode テストを実行 --------------------------------------------------
+$logsDir = Join-Path $projectDir 'Logs'
+if (-not (Test-Path $logsDir)) { New-Item -ItemType Directory -Path $logsDir | Out-Null }
+$errPath = Join-Path $logsDir 'stop-hook-stderr.txt'
+
+# 外部コマンドを呼ぶ。
+# PowerShell 5.1 では、外部コマンドが標準エラーに何か書くと $ErrorActionPreference='Stop' の
+# もとでスクリプトが途中で死ぬ。そうなるとこのスクリプトは終了コード 1 を返し、
+# Claude Code は「2 でないから続けてよい」と判断して作業を止めない ＝ ゲートが素通りする。
+# これを避けるため、外部コマンドの呼び出し中だけ 'Continue' に落とす。
+function Invoke-Unity {
+    param([string[]] $Arguments)
+
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $out = & $unityExe @Arguments 2> $errPath | Out-String
+        $exit = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+
+    $err = ''
+    if (Test-Path $errPath) { $err = (Get-Content $errPath -Raw -ErrorAction SilentlyContinue) }
+
+    [pscustomobject]@{ StdOut = $out; StdErr = $err; ExitCode = $exit }
+}
+
+# 作業を止める（＝完了させない）。exit 2 で標準エラーに出した内容だけが Claude に戻る。
+#
+# ここで Write-Error を使ってはいけない。$ErrorActionPreference='Stop' のもとでは
+# Write-Error 自体が致命的エラーになってスクリプトがその場で死に、終了コードが 2 ではなく
+# 1 になる。Claude Code が作業を止めるのは 2 のときだけなので、素通りしてしまう。
+function Block-Completion {
+    param([string] $Reason, [string] $Detail)
+    [Console]::Error.WriteLine("[Stop hook] $Reason")
+    [Console]::Error.WriteLine("")
+    [Console]::Error.WriteLine($Detail)
+    exit 2
+}
+
+# ---------------------------------------------------------------------------
+# 経路1: 起動中の Editor でテストを走らせる（Unity Pipeline パッケージ）
+#
+# `unity test` は Editor を開いたままでは実行できない（終了コード 6）。
+# 普段は Editor を開いて作業するので、こちらが本命の経路になる。
+#
+# 【注意】run_tests はテストが落ちても終了コード 0 を返す。
+# 終了コードでは判定できないので、返ってきた JSON の Summary.Failed で判定する。
+# ---------------------------------------------------------------------------
+Write-Host "[Stop hook] 起動中の Editor で EditMode テストを実行します。"
+$viaEditor = Invoke-Unity @('command', 'run_tests', '--mode', 'EditMode', '--result-only')
+
+$summary = $null
+$json = $null
+try {
+    # 先頭に BOM が付いてくることがあり、そのままでは ConvertFrom-Json が失敗する。
+    $body = $viaEditor.StdOut.TrimStart([char]0xFEFF, ' ', [char]13, [char]10, [char]9)
+    $json = $body | ConvertFrom-Json
+    if ($null -ne $json.Summary) { $summary = $json.Summary }
+} catch {
+    # JSON が取れない ＝ Editor が起動していないか、接続できない。経路2 へ落ちる。
+}
+
+if ($null -ne $summary) {
+    $line = "実行 $($summary.Total) 件 / 成功 $($summary.Passed) / 失敗 $($summary.Failed) / 省略 $($summary.Skipped)"
+
+    if ($summary.Failed -gt 0) {
+        $failed = $json.Results | Where-Object { $_.Status -eq 'Failed' } |
+                  ForEach-Object { "- $($_.FullName)`n  $($_.Message)" }
+        Block-Completion "EditMode テストが失敗しています。" "$line`n`n$($failed -join "`n")"
+    }
+
+    # コンパイルが通っているかを別に確かめる。
+    # コンパイルが落ちていると、Editor は前回通ったときのアセンブリでテストを走らせる。
+    # つまり「壊れたコードを書いたのに全部成功した」という結果が出うる。
+    # テストの成否だけを見ていると、この状態を見逃す。
+    $compilationFailed = $null
+    $consoleStatus = Invoke-Unity @('command', 'console_status', '--result-only')
+    try {
+        $sBody = $consoleStatus.StdOut.TrimStart([char]0xFEFF, ' ', [char]13, [char]10, [char]9)
+        $sJson = $sBody | ConvertFrom-Json
+        if ($null -ne $sJson.groundTruth) {
+            $compilationFailed = [bool] $sJson.groundTruth.compilationFailed
+        }
+    } catch {
+        # 取れなければ $null のまま。下で「分からない」として扱う。
+    }
+
+    if ($compilationFailed -eq $true) {
+        Block-Completion "コンパイルが通っていません。" `
+            "テストの結果（$line）は、前回コンパイルが通ったときのコードによるものです。信用できません。"
+    }
+
+    if ($summary.Total -eq 0) {
+        if ($compilationFailed -eq $false) {
+            # コンパイルは通っている ＝ まだテストを1本も書いていないだけ。
+            # D 段階に入る前はこの状態が正常なので止めない。ただし黙らない。
+            Write-Host "[Stop hook] EditMode テストが1件もありません。この段は今なにも守っていません。"
+            exit 0
+        }
+        Block-Completion "EditMode テストが1件も実行されませんでした。" `
+            "コンパイルが通っているかどうかも確認できませんでした。`n`n$($viaEditor.StdOut)"
+    }
+
+    Write-Host "[Stop hook] EditMode テストは全て成功しました（$line）。"
+    exit 0
+}
+
+# ---------------------------------------------------------------------------
+# 経路2: Editor が起動していないので、バッチで走らせる
+# こちらは終了コードで判定する。
+# ---------------------------------------------------------------------------
+Write-Host "[Stop hook] Editor に接続できないので、バッチで EditMode テストを実行します。"
+
 # 結果ファイルは Logs/ に書く（.gitignore 済み）。既定のままだとリポジトリ直下に
 # test-results.xml が残り、コミット対象に紛れ込む。
-$resultsPath = Join-Path $projectDir 'Logs\editmode-tests.xml'
-$logsDir = Split-Path $resultsPath
-if (-not (Test-Path $logsDir)) { New-Item -ItemType Directory -Path $logsDir | Out-Null }
+$resultsPath = Join-Path $logsDir 'editmode-tests.xml'
 
-$unityArgs = @('test') + $EditModeFlag + @('--non-interactive', '--no-banner', '--output', $resultsPath)
-Write-Host "[Stop hook] EditMode テストを実行します: unity $($unityArgs -join ' ')"
+# 確認済み: unity CLI 1.0.0-beta.8 の `unity test --mode EditMode`
+# Unity CLI は beta なので、動かなくなったら `unity test --help` で確認し直す。
+$viaBatch = Invoke-Unity @('test', '--mode', 'EditMode', '--non-interactive', '--no-banner', '--output', $resultsPath)
+$code = $viaBatch.ExitCode
+$detail = "$($viaBatch.StdOut)`n$($viaBatch.StdErr)"
 
-$testOutput = & $unityExe @unityArgs 2>&1 | Out-String
-$code = $LASTEXITCODE
-
-Write-Host $testOutput
-
-switch ($code) {
-    0 {
-        Write-Host "[Stop hook] EditMode テストは全て成功しました。"
-        exit 0
-    }
-
-    # 8  = テストは走ったが1件以上落ちた
-    # 6  = 実行が完走しなかった（コンパイルエラーなど。テスト結果が出ていない）
-    # 1  = 一般エラー
-    # 2  = 使い方の誤り（＝上の $EditModeFlag が間違っている可能性が高い）
-    { $_ -in 8, 6, 1, 2 } {
-        $reason = switch ($code) {
-            8 { "EditMode テストが失敗しています。" }
-            6 { "テストが完走しませんでした。コンパイルエラーの可能性があります。" }
-            2 { "unity test の引数が不正です（.claude/hooks/run-editmode-tests.ps1 の `$EditModeFlag を確認）。" }
-            default { "unity test が一般エラーで終了しました。" }
-        }
-        # exit 2 で標準エラーに出した内容が Claude に戻り、作業が完了扱いにならない。
-        Write-Error "[Stop hook] $reason (unity test 終了コード: $code)`n`n$testOutput"
-        exit 2
-    }
-
-    # 3 = 認証/認可、4 = 要設定、7 = Unity サービスに到達できない
-    # 130 / 143 = 中断。いずれも AI が直せる種類の失敗ではないので、止めずに警告だけ出す。
-    default {
-        Write-Host "[Stop hook] 環境側の問題でテストを実行できませんでした（終了コード: $code）。"
-        Write-Host "[Stop hook] 作業は止めません。unity doctor で環境を確認してください。"
-        exit 0
-    }
+if ($code -eq 0) {
+    Write-Host "[Stop hook] EditMode テストは全て成功しました。"
+    exit 0
 }
+
+$reason = switch ($code) {
+    8 { "EditMode テストが失敗しています。" }
+    6 { "テストが完走しませんでした。コンパイルエラーか、Editor が開いたままの可能性があります。" }
+    2 { "unity test の引数が不正です（.claude/hooks/run-editmode-tests.ps1 を確認）。" }
+    3 { "Unity にサインインできていません。unity auth login を実行してください。" }
+    4 { "Unity CLI の設定が足りません。unity doctor を実行してください。" }
+    7 { "Unity のサービスに接続できませんでした。" }
+    default { "unity test が終了コード $code で終了しました。" }
+}
+
+# 環境側の問題（3/4/7 など）でも止める。
+# 「テストの結果が分からない」ときに通してしまうと、このゲートは名前だけになるため。
+# 無限ループにはならない（先頭の stop_hook_active で2回目は素通りする）。
+Block-Completion "$reason (unity test 終了コード: $code)" $detail
