@@ -17,7 +17,7 @@
 | ✅ | AI にシーン・プレハブ・`.meta` を直接編集させない設定 | — |
 | ✅ | AI が毎回読む決めごと3ファイル（`.kiro/steering/`） | — |
 | ✅ | 記録シートの雛形、作るものの説明の下書き | — |
-| ✅ | Unity のプロジェクト本体（URP、Unity 6000.6.2f1） | A-2 |
+| ✅ | Unity のプロジェクト本体（URP、Unity 6000.3.25f1 = 6.3 LTS） | A-2 |
 | ✅ | OpenXR と Meta XR Core SDK、シーンとカメラリグとパススルー | A-2 |
 | ✅ | AI から起動中の Editor を操作する仕組み（Unity Pipeline） | A-3 |
 | ✅ | テスト自動実行のコマンド確定（`unity test --mode EditMode`） | B-5 |
@@ -80,19 +80,19 @@ README の A〜D に対応している。上から順に。
 
 | モジュール ID | 名前 | ダウンロード |
 | --- | --- | --- |
-| `android` | Android Build Support | 1.24 GB |
-| `android-sdk-ndk-tools` | Android SDK & NDK Tools | 1.12 GB |
+| `android` | Android Build Support | 1.48 GB |
+| `android-sdk-ndk-tools` | Android SDK & NDK Tools | 約 1.2 GB（子項目の合計） |
 | `android-open-jdk-17.0.18+8` | OpenJDK | 113 MB |
 
 あとから入れる場合、Unity Hub の Installs 画面（歯車 → Add modules）か、CLI で入れる。
 **プロジェクトは要らない。**モジュールは Editor のバージョンに紐づく。
 
 ```
-unity install-modules -e 6000.6.2f1 -m android --cm --accept-eula
+unity install-modules -e 6000.3.25f1 -m android --cm --accept-eula
 ```
 
 `--cm` が子モジュールを一緒に入れる指定。入ったかどうかは
-`unity install-modules -e 6000.6.2f1 --list` で確認する。
+`unity install-modules -e 6000.3.25f1 --list` で確認する。
 
 **3. Claude Code を入れ、Unity 公式プラグインを追加する**
 
@@ -128,12 +128,29 @@ Unity のバージョンは手順 A-2 のあと `ProjectSettings/ProjectVersion.
 
 | | バージョン | 確認日 |
 | --- | --- | --- |
-| Unity | 6000.6.2f1 | 2026-09-21 |
+| Unity | 6000.3.25f1（6.3 LTS） | 2026-10-04 |
 | Unity CLI（`unity --version`） | 1.0.0-beta.10 | 2026-09-21 |
 | Unity 公式プラグイン（`claude plugin list`） | 0.1.6-beta | 2026-09-21 |
 
 **Unity CLI は勝手に上がる。**この手順を進めている最中に beta.8 → beta.10 に
 自動更新された。`unity test` のオプションは変わっていなかったが、変わる前提でいる。
+
+> **Unity は 6.3 LTS（6000.3.25f1）に揃える。**このプロジェクトは最初 6000.6.2f1 で作り、
+> あとから 6.3 LTS に下げた。長く同じ版を使い続けるので、サポート期間の長い LTS にした。
+>
+> **別のバージョンで開かない。**特に**新しい版で一度開くと、古い版に戻すのが大変になる。**
+> 6000.6 → 6000.3 に下げたときは次が起きた。どれも版の違いだけが原因だった。
+>
+> | 症状 | 原因 |
+> | --- | --- |
+> | `Package [...] cannot be found` で開けない | 新しい版にしかない組み込みモジュール・パッケージの版が `Packages/manifest.json` に残っていた |
+> | OpenXR が `NullReferenceException` を出す | XR Hands が同梱の古い版に下がり、OpenXR の設定に入っている Feature のスクリプトが消えた |
+> | `Missing types referenced from component UniversalRenderPipelineGlobalSettings` | URP の設定に、新しい URP にしかない型の登録が残っていた |
+> | Project Setup Tool に Recommended の指摘が増える | 設定の一部が初期値に戻った |
+>
+> 直し方は、`manifest.json` の版を Editor 同梱の版（`<Unity のフォルダ>/Editor/Data/Resources/PackageManager/Editor/`
+> に `.tgz` で並んでいる）に合わせ、存在しない型の登録を設定ファイルから消すこと。
+> 実際の修正内容はコミット `f48bedb` にある。
 
 `unity doctor` で `check.windows-long-paths` が `warn` になることがある。
 Unity のプロジェクトはパスが深くなりやすく、Windows の 260 文字制限に当たると
@@ -170,7 +187,7 @@ Editor の画面操作なので自分でやる。
 別の場所に雛形を作り、設定だけを持ってくる。
 
 ```
-unity projects create UrpScaffold --path <一時フォルダ>   --editor-version 6000.6.2f1 --template com.unity.template.urp-blank --no-cloud
+unity projects create UrpScaffold --path <一時フォルダ>   --editor-version 6000.3.25f1 --template com.unity.template.urp-blank --no-cloud
 ```
 
 **テンプレートは Universal 3D（URP）を使う。** Quest は URP が標準で、

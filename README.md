@@ -133,7 +133,7 @@ claude plugin install unity@claude-plugins-official --scope project
 
 | | バージョン |
 | --- | --- |
-| Unity | 6000.6.2f1 |
+| Unity | 6000.3.25f1（6.3 LTS） |
 | Unity CLI | 1.0.0-beta.10 |
 | Unity 公式プラグイン | 0.1.6-beta（`unity@claude-plugins-official`） |
 
@@ -168,7 +168,7 @@ claude plugin install unity@claude-plugins-official --scope project
 | Git | 2.45.2 |
 | Node.js | 24.13.1（npx 11.10.1） |
 | GitHub CLI | 2.101.0（リポジトリ作成に使っただけで、必須ではない） |
-| Unity | 6000.6.2f1（Unity Hub 経由） |
+| Unity | 6000.3.25f1（Unity Hub 経由。骨組みは 6000.6.2f1 で作り、のちに 6.3 LTS へ下げた） |
 | Unity CLI | 1.0.0-beta.10 |
 
 </details>
