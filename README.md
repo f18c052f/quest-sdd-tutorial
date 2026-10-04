@@ -134,7 +134,7 @@ claude plugin install unity@claude-plugins-official --scope project
 | | バージョン |
 | --- | --- |
 | Unity | 6000.3.25f1（6.3 LTS） |
-| Unity CLI | 1.0.0-beta.10 |
+| Unity CLI | 1.0.0-beta.12 |
 | Unity 公式プラグイン | 0.1.6-beta（`unity@claude-plugins-official`） |
 
 > **Unity CLI は勝手に上がる。**この骨組みを作っている最中に beta.8 → beta.10 に

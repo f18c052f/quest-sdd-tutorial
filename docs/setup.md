@@ -129,8 +129,8 @@ Unity のバージョンは手順 A-2 のあと `ProjectSettings/ProjectVersion.
 | | バージョン | 確認日 |
 | --- | --- | --- |
 | Unity | 6000.3.25f1（6.3 LTS） | 2026-10-04 |
-| Unity CLI（`unity --version`） | 1.0.0-beta.10 | 2026-09-21 |
-| Unity 公式プラグイン（`claude plugin list`） | 0.1.6-beta | 2026-09-21 |
+| Unity CLI（`unity --version`） | 1.0.0-beta.12 | 2026-10-04 |
+| Unity 公式プラグイン（`claude plugin list`） | 0.1.6-beta | 2026-10-04 |
 
 **Unity CLI は勝手に上がる。**この手順を進めている最中に beta.8 → beta.10 に
 自動更新された。`unity test` のオプションは変わっていなかったが、変わる前提でいる。
@@ -492,7 +492,8 @@ echo $LASTEXITCODE
 > スクリプトは **UTF-8 BOM 付き**で保存すること。Windows の PowerShell 5.1 は BOM が
 > ないと `.ps1` を別の文字コードとして読み、日本語コメントで構文エラーになる。
 
-> Unity を閉じた状態での動きは、まだ実際には試していない。
+> Unity を閉じた状態（バッチ）は、6000.3.25f1 / CLI beta.12 で動くことだけ確かめた
+> （テスト0件で終了コード 0）。落ちるテストを置いた状態は、まだ試していない。
 > ふだんは Unity を開いて作業するため、そちらを先に確かめた。
 
 ### B-6. 仕様を書くための道具を入れる
