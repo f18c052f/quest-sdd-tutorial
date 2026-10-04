@@ -24,7 +24,7 @@
 | ✅ | Meta XR SDK を使う置き場所の指定（`Oculus.VR`） | A-4 |
 | ✅ | テスト自動実行が本当に止めるかの確認 | B-5 |
 | ✅ | 仕様を書くための道具（cc-sdd 3.1.0） | B-6 |
-| ⬜ | シミュレータ（実機なしで動かす唯一の手段） | B-7 |
+| ✅ | シミュレータ（実機なしで動かす唯一の手段。別アプリなので各自の PC に入れる） | B-7 |
 | ⬜ | 作るものの説明の書き直し（人が書く） | C-7 |
 
 ## 手順
@@ -131,6 +131,7 @@ Unity のバージョンは手順 A-2 のあと `ProjectSettings/ProjectVersion.
 | Unity | 6000.3.25f1（6.3 LTS） | 2026-10-04 |
 | Unity CLI（`unity --version`） | 1.0.0-beta.12 | 2026-10-04 |
 | Unity 公式プラグイン（`claude plugin list`） | 0.1.6-beta | 2026-10-04 |
+| Meta XR Simulator（`C:\Program Files\MetaXRSimulator\` の中のフォルダ名） | v207.0 | 2026-10-04 |
 
 **Unity CLI は勝手に上がる。**この手順を進めている最中に beta.8 → beta.10 に
 自動更新された。`unity test` のオプションは変わっていなかったが、変わる前提でいる。
@@ -551,6 +552,9 @@ Unity 側の連携は Core SDK（205）に最初から入っているので、�
    アプリのダウンロードとインストールが始まる。出ていなければ、ツールバーの Meta XR Simulator の
    項目にある `Download from developer center` から入れる
 3. 入れ終わったら、Unity のツールバーで Meta XR Simulator を有効にする
+
+`C:\Program Files\MetaXRSimulator\` に入る（確認時点で v207.0。Core SDK の 205 と番号が
+近いが、別に更新される）。**リポジトリには何も増えない**ので、受け取った人も各自でこの手順を行う。
 
 > **`com.meta.xr.simulator` パッケージを入れてはいけない。**これは旧版（XR Simulator 1）で、
 > 版の採番も 81 系と Core SDK（205 系）からずれている。Core SDK 205 と一緒に入れると、
