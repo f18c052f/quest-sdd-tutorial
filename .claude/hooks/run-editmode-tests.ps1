@@ -122,6 +122,69 @@ function Block-Completion {
     exit 2
 }
 
+# Unity CLI の --result-only の出力を JSON として読む。読めなければ $null。
+function ConvertFrom-UnityResult {
+    param($Result)
+    try {
+        # 先頭に BOM が付いてくることがあり、そのままでは ConvertFrom-Json が失敗する。
+        $body = $Result.StdOut.TrimStart([char]0xFEFF, ' ', [char]13, [char]10, [char]9)
+        return ($body | ConvertFrom-Json)
+    } catch {
+        return $null
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 経路1 の前に: 起動中の Editor でコンパイルを済ませ、終わるまで待つ
+#
+# AI がファイルを書いた直後は、Editor がまだそれを取り込んでいないか、コンパイル中のことがある。
+# その状態で run_tests を頼むと、前回のアセンブリでテストが走るか、テストが 0 件になる。
+# 0 件は「まだテストを書いていない」と区別がつかず、そのまま通ってしまう
+# （6000.3 で確かめ直したときに実際に起きた）。
+#
+# recompile は Editor が裏にあっても動く。状態は recompile_status で
+# idle | triggered | compiling | completed | up_to_date のどれかが返る。
+# コンパイルのあとのドメインリロード中は Editor に接続できないので、
+# 接続できないあいだも「まだ終わっていない」として待つ。
+# ---------------------------------------------------------------------------
+$CompileTimeoutSeconds = 180
+
+$recompile = ConvertFrom-UnityResult (Invoke-Unity @('command', 'recompile', '--result-only'))
+if ($null -ne $recompile -and $null -ne $recompile.status) {
+    Write-Host "[Stop hook] 起動中の Editor でコンパイルを済ませます（$($recompile.status)）。"
+
+    $deadline = (Get-Date).AddSeconds($CompileTimeoutSeconds)
+    $settled = $false
+    while ((Get-Date) -lt $deadline) {
+        $status = ConvertFrom-UnityResult (Invoke-Unity @('command', 'recompile_status', '--result-only'))
+        $busy = ($null -eq $status) -or ($status.status -in @('triggered', 'compiling'))
+
+        if (-not $busy) {
+            # recompile_status が終わっていても、ドメインリロードがまだのことがある。
+            $console = ConvertFrom-UnityResult (Invoke-Unity @('command', 'console_status', '--result-only'))
+            $busy = ($null -eq $console) -or ($null -eq $console.groundTruth) -or [bool] $console.groundTruth.compiling
+        }
+
+        if (-not $busy) {
+            $settled = $true
+            break
+        }
+        Start-Sleep -Seconds 2
+    }
+
+    if (-not $settled) {
+        Block-Completion "コンパイルが $CompileTimeoutSeconds 秒たっても終わりませんでした。" `
+            "Editor が固まっているか、ダイアログが出て止まっている可能性があります。Unity の画面を確認してください。"
+    }
+
+    # コンパイルが落ちていれば、テストを走らせる前に止める。
+    # このとき Editor は前回通ったアセンブリでテストを走らせるので、結果はいま書いたコードと無関係。
+    # 先にテストの成否を見ると、古いコードの失敗を理由に止めてしまい、本当の原因が隠れる。
+    if ([bool] $status.compilationFailed) {
+        Block-Completion "コンパイルが通っていません。" (($status.errors | ForEach-Object { "- $_" }) -join "`n")
+    }
+}
+
 # ---------------------------------------------------------------------------
 # 経路1: 起動中の Editor でテストを走らせる（Unity Pipeline パッケージ）
 #
@@ -135,15 +198,9 @@ Write-Host "[Stop hook] 起動中の Editor で EditMode テストを実行し�
 $viaEditor = Invoke-Unity @('command', 'run_tests', '--mode', 'EditMode', '--result-only')
 
 $summary = $null
-$json = $null
-try {
-    # 先頭に BOM が付いてくることがあり、そのままでは ConvertFrom-Json が失敗する。
-    $body = $viaEditor.StdOut.TrimStart([char]0xFEFF, ' ', [char]13, [char]10, [char]9)
-    $json = $body | ConvertFrom-Json
-    if ($null -ne $json.Summary) { $summary = $json.Summary }
-} catch {
-    # JSON が取れない ＝ Editor が起動していないか、接続できない。経路2 へ落ちる。
-}
+# JSON が取れない ＝ Editor が起動していないか、接続できない。経路2 へ落ちる。
+$json = ConvertFrom-UnityResult $viaEditor
+if ($null -ne $json -and $null -ne $json.Summary) { $summary = $json.Summary }
 
 if ($null -ne $summary) {
     $line = "実行 $($summary.Total) 件 / 成功 $($summary.Passed) / 失敗 $($summary.Failed) / 省略 $($summary.Skipped)"
@@ -158,16 +215,11 @@ if ($null -ne $summary) {
     # コンパイルが落ちていると、Editor は前回通ったときのアセンブリでテストを走らせる。
     # つまり「壊れたコードを書いたのに全部成功した」という結果が出うる。
     # テストの成否だけを見ていると、この状態を見逃す。
+    # 取れなければ $null のまま。下で「分からない」として扱う。
     $compilationFailed = $null
-    $consoleStatus = Invoke-Unity @('command', 'console_status', '--result-only')
-    try {
-        $sBody = $consoleStatus.StdOut.TrimStart([char]0xFEFF, ' ', [char]13, [char]10, [char]9)
-        $sJson = $sBody | ConvertFrom-Json
-        if ($null -ne $sJson.groundTruth) {
-            $compilationFailed = [bool] $sJson.groundTruth.compilationFailed
-        }
-    } catch {
-        # 取れなければ $null のまま。下で「分からない」として扱う。
+    $sJson = ConvertFrom-UnityResult (Invoke-Unity @('command', 'console_status', '--result-only'))
+    if ($null -ne $sJson -and $null -ne $sJson.groundTruth) {
+        $compilationFailed = [bool] $sJson.groundTruth.compilationFailed
     }
 
     if ($compilationFailed -eq $true) {
