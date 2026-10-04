@@ -50,7 +50,7 @@ README の A〜D に対応している。上から順に。
 | A-4 XR の置き場所指定 | **AI** | 設定ファイルの編集だけ |
 | B-5 テスト自動実行の確認 | **済** | 4つの状態で確認済み。仕組みが3つ壊れていたので直した |
 | B-6 仕様を書く道具 | **自分** | 全員が同じ版を使うため、入れる人を1人に絞る（ガイドライン第4章） |
-| B-7 シミュレータ | **両方** | 導入は AI。ツールバーからの有効化は Editor の画面操作なので自分 |
+| B-7 シミュレータ | **自分** | 別のアプリとしてダウンロードして入れる。有効化も Editor の画面操作 |
 | C-7 作るものの説明 | **自分** | 外部設計は人間が書く（ガイドライン第1章 鉄則3） |
 | D-8 以降の実装 | 層で分ける | [README の「AI と自分の分担」](../README.md#ai-と自分の分担)を見る |
 
@@ -538,29 +538,36 @@ git diff -- .kiro/steering/
 
 ### B-7. シミュレータを入れる
 
-**担当: AI が導入、自分が有効化。**
+**担当: 自分。** ブラウザでのダウンロードとインストーラの操作があるため、AI は代われない。
 
 実機を使わないので、**これが唯一の「動かして確かめる」手段**になる。
 実機のヘッドセットの見え方（視野角、解像度、コントローラー入力）を PC 上で再現する。
 
-```
-com.meta.xr.simulator
-```
+**シミュレータは Unity のパッケージではなく、別のアプリ（Meta XR Simulator 2）として入れる。**
+Unity 側の連携は Core SDK（205）に最初から入っているので、パッケージの追加は要らない。
 
-導入は A-2 と同じ仕組み（`Assets/Editor/ProjectBootstrap/PackageInstaller.cs` の
-`PackagesToAdd` に足して、Editor を閉じてバッチモードで実行）。
+1. Unity を開き、`Meta` → `Tools` → `Project Setup Tool` を開く
+2. `Newest Meta XR Simulator not installed` という Recommended の指摘が出ていれば `Fix` を押す。
+   アプリのダウンロードとインストールが始まる。出ていなければ、ツールバーの Meta XR Simulator の
+   項目にある `Download from developer center` から入れる
+3. 入れ終わったら、Unity のツールバーで Meta XR Simulator を有効にする
 
-> **版の採番が Core SDK と揃っていない。** Core SDK が 205 系なのに対し、
-> シミュレータは 81 系（確認時点で 81.0.1）。同じ SDK の一部に見えて別系統なので、
-> **入れたあとに Core SDK が壊れていないか確かめる。**
+> **`com.meta.xr.simulator` パッケージを入れてはいけない。**これは旧版（XR Simulator 1）で、
+> 版の採番も 81 系と Core SDK（205 系）からずれている。Core SDK 205 と一緒に入れると、
+> Core SDK の内部の型を使おうとして**コンパイルが通らなくなる**。
 >
 > ```
-> unity command recompile
-> unity command recompile_status   # errors が空か
+> Library\PackageCache\com.meta.xr.simulator@...\Editor\Updater.cs: error CS0122:
+> 'IUserInterfaceItem' is inaccessible due to its protection level
 > ```
-
-入れたら Unity のツールバーから有効にする。ここは GUI 操作なので自分でやる。
-有効になっているかは `Meta` → `Tools` → `Meta XR Simulator` の表示で分かる。
+>
+> コンパイルが通らないと、バッチモードの `-executeMethod` も動かないので、
+> `PackageInstaller.cs` で外すこともできない。実際に一度入れてしまったときは、
+> `Packages/manifest.json` から該当の1行を手で消して戻した。
+>
+> 加えて、レジストリの latest は実在しない `81.0.1` を指していた（中身が公開されておらず
+> `cannot be found` で失敗する）。パッケージの版は latest ではなく、`versions` に
+> 実際に並んでいるものから選ぶ。
 
 **シミュレータで分からないこと**（ガイドライン第9章）:
 
