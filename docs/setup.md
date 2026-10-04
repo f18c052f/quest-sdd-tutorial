@@ -23,7 +23,7 @@
 | ✅ | テスト自動実行のコマンド確定（`unity test --mode EditMode`） | B-5 |
 | ✅ | Meta XR SDK を使う置き場所の指定（`Oculus.VR`） | A-4 |
 | ✅ | テスト自動実行が本当に止めるかの確認 | B-5 |
-| ✅ | 仕様を書くための道具（cc-sdd 3.1.0） | B-6 |
+| ✅ | 仕様を書くための道具（cc-sdd 3.1.0 のスキル形式） | B-6 |
 | ✅ | シミュレータ（実機なしで動かす唯一の手段。別アプリなので各自の PC に入れる） | B-7 |
 | ✅ | 作るものの説明の書き直し（人が書く。版 1.0） | C-7 |
 
@@ -527,11 +527,19 @@ echo $LASTEXITCODE
 **担当: 自分。** 全員が同じ版を使うよう、入れる人を1人に絞る（ガイドライン第4章）。
 
 ```
-npx cc-sdd@latest --claude-code --lang ja
+npx cc-sdd@3.1.0 --claude-code-skills --lang ja
 ```
 
-`/kiro:spec-init`（機能の枠を作る）、`/kiro:spec-requirements`（要件を書く）といった
-コマンドが入る。
+`/kiro-discovery`（何を spec にするか決める）、`/kiro-spec-init`（機能の枠を作る）、
+`/kiro-spec-requirements`（要件を書く）といったスキルが入る。
+
+> **`--claude-code` ではなく `--claude-code-skills` を指定する。**cc-sdd には Claude Code 向けの
+> 入れ方が2つある。`--claude-code` は旧来のコマンド形式（`/kiro:spec-init`、11 個）で、
+> **`/kiro-discovery` やレビュー用のスキルが入らない。**cc-sdd の既定と公式の案内は
+> スキル形式（`/kiro-spec-init`、17 個）なので、そちらに揃える。
+> このリポジトリも最初は `--claude-code` で入れてしまい、あとから入れ直した。
+>
+> 版は `@latest` ではなく固定する。入れる人によって版がずれないようにするため。
 
 入れたら **`.kiro/steering/` の3ファイルが上書きされていないか確認する。**
 この道具は同じ場所に自前のテンプレートを置くので、手で書いた内容が消えることがある。
@@ -543,17 +551,29 @@ git diff -- .kiro/steering/
 
 消えていたら `git checkout -- .kiro/steering/` で戻す。
 
-入ったコマンド（`.claude/commands/` など）は**コミットする**。
+入ったスキル（`.claude/skills/` など）は**コミットする**。
 配布された人が各自で `npx` を実行するとバージョンがずれるため。
 
-入ったのは cc-sdd 3.1.0（2026-10-04）。作られたのは次の3つで、`.kiro/steering/` は
-上書きされなかった。
+入ったのは cc-sdd 3.1.0 のスキル形式（2026-10-04）。作られたのは次の3つで、
+`.kiro/steering/` は上書きされなかった。
 
 | 場所 | 中身 |
 | --- | --- |
-| `.claude/commands/kiro/` | `/kiro:spec-init` などのコマンド 11 個 |
-| `.kiro/settings/` | コマンドが使う決まりごとと雛形 |
+| `.claude/skills/kiro-*/` | スキル 17 個（下の表） |
+| `.kiro/settings/` | スキルが使う決まりごとと雛形 |
 | `CLAUDE.md` | Claude Code が毎回読む指示。仕様駆動の流れが書いてある |
+
+| スキル | いつ使うか |
+| --- | --- |
+| `/kiro-discovery` | 新しい作業の入口。spec を1つ作るのか、いくつに分けるのか、spec が要らないのかを決める |
+| `/kiro-spec-init` → `-requirements` → `-design` → `-tasks` | 1つの spec を段階ごとに書く。段階ごとに人が読んで承認する |
+| `/kiro-impl <spec> <タスク番号>` | 実装。**タスク番号を必ず指定する**（ガイドライン第5章） |
+| `/kiro-validate-impl <spec>` | spec を閉じる前に、仕様どおりに作れているかを確かめる |
+| `/kiro-validate-gap` / `/kiro-validate-design` | 既存コードとの差の分析 / 設計のレビュー。任意 |
+| `/kiro-spec-status` | 進み具合の確認 |
+| `/kiro-steering` / `/kiro-steering-custom` | 決めごとの見直し |
+| `/kiro-spec-quick` / `/kiro-spec-batch` | 承認を飛ばして一気に作る近道。**このリポジトリでは使わない**（段階ごとの承認がガイドラインの要） |
+| `kiro-review` / `kiro-debug` / `kiro-verify-completion` | `/kiro-impl` が内部で使う。直接は呼ばない |
 
 ### B-7. シミュレータを入れる
 
@@ -631,12 +651,38 @@ git push origin setup-3-ready
 
 **担当: 層で分ける。** [README の「AI と自分の分担」](../README.md#ai-と自分の分担)を見る。
 
+**1. 自分のブランチを切り、何を spec にするかを決める**
+
 ```
 git switch -c run/<自分の名前>
+```
+
+```
+/kiro-discovery 外部設計 docs/external/mosquito-spray.md のゲームを作る
+```
+
+`/kiro-discovery` が、作るものをいくつの spec に分けるかを質問しながら決め、
+`.kiro/steering/roadmap.md`（spec の一覧と依存の順番）と、spec ごとの
+`.kiro/specs/<spec>/brief.md`（その spec の目的と範囲）を書く。
+
+**AI が出した分け方を、そのまま採用しない。**[学習ロードマップ](learning-roadmap.md) の 3-2 に
+人が考えた分け方（7つ）がある。並べて比べ、違うところは理由を確かめてから決める。
+外部設計の離脱警告は 3-2 のどれにも入っていないので、ここでどこに入れるかを決める。
+決めたら `run/<名前>` にコミットする（人によって分け方が違うので `main` には入れない）。
+
+**2. 最初の spec を作る**
+
+```
 git switch -c spec/spray-hit-core
 ```
 
-`/kiro:spec-init` から始める。1機能あたりの流れは
+```
+/kiro-spec-init spray-hit-core
+```
+
+`brief.md` があれば、`/kiro-spec-init` はそれを読んで始める。そのあと
+`/kiro-spec-requirements` → `/kiro-spec-design` → `/kiro-spec-tasks` と進み、
+**段階ごとに中身を読んで承認する。**1機能あたりの流れは
 [学習ロードマップ](learning-roadmap.md) の 3-4 にある。終えるたびに
 [記録シート](learning-log.md) に書き込む。
 
@@ -646,7 +692,8 @@ git switch -c spec/spray-hit-core
 
 ```
 .claude/          AI の権限設定と、作業終了時に走るスクリプト
-.kiro/steering/   AI が毎回読む決めごと（3ファイル・合計400行以内）
+.claude/skills/   仕様を書くためのスキル（cc-sdd）
+.kiro/steering/   AI が毎回読む決めごと（3ファイル・合計400行以内）と、spec の一覧（roadmap.md）
 .kiro/specs/      作業中の機能の仕様
 .kiro/archive/    終えた機能の仕様
 Assets/Scripts/   Core（計算だけ）/ Adapter（Unity と繋ぐ）/ XR（Meta XR SDK 用）

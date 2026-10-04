@@ -75,7 +75,7 @@ Core だけで閉じる spec を先に作る。シーンを触らないので、
 | design.md | 800行 |
 | tasks.md | 300行 |
 | requirements.md | 250行 |
-| ステアリング3ファイル合計 | 400行 |
+| ステアリング3ファイル合計 | 400行（`roadmap.md` は数えない。`/kiro-discovery` が書く spec の一覧で、毎回は読まれない） |
 
 このリポジトリには CI がないので、超過を止める仕組みはない。
 spec を閉じるときに自分で数え、`docs/learning-log.md` に記録する。
@@ -100,7 +100,7 @@ PR の代わりにローカルのブランチとコミットを使う。
 | ブランチ | 中身 |
 | --- | --- |
 | `main` | 骨組み、Unity プロジェクト、SDK、cc-sdd、steering、外部設計の確定版、learning-log の雛形 |
-| `run/<名前>` | その人の実走。spec、実装、記入済み learning-log |
+| `run/<名前>` | その人の実走。spec の分け方（`roadmap.md` と `brief.md`）、spec、実装、記入済み learning-log |
 | `spec/<spec>` | `run/<名前>` から切る。閉じたら `run/<名前>` へ戻す |
 
 分ける基準は「誰がやっても同じ結果になるか」。同じになるものは `main`、

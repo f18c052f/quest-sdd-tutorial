@@ -165,6 +165,8 @@ GitHubは保存先としてだけ使い、IssueやPRは使わない。チュー�
 
 検証欄のEditMode・PlayModeは、どちらもUnity Test Framework（UTF）のテストを指す。spray-input-adapterは、入力をインターフェース越しに受ける形にして、PlayModeテストで擬似入力に差し替える。
 
+この表は人が考えた分け方。実際の分割は `/kiro-discovery` に外部設計を渡して出させ、この表と比べて決める（違いそのものが学習の材料になる）。外部設計の離脱警告はこの表のどれにも入っていないので、そこで置き場所を決める。
+
 L1の4つを先に作る。シーンを触らないので、ガイドラインの流れに慣れるのに向いている。最初のspecは**spray-hit-core**がよい。純粋な計算だけで、テストが書きやすい。
 
 見た目（蚊のモデル、噴射エフェクト、音）はL4なので仕様に書かず、最後に人間が仕上げる。
@@ -208,11 +210,11 @@ L1の4つを先に作る。シーンを触らないので、ガイドライン�
 flowchart LR
   A[spec-init<br/>specブランチ作成] --> B[requirements<br/>design / tasks]
   B --> C[仕様コミット<br/>読み返し]
-  C --> D[spec-impl<br/>1〜3タスク]
+  C --> D[impl<br/>1〜3タスク]
   D --> E[Stopフック]
   E --> F[実装コミット]
   F -->|タスクが残っている| D
-  F -->|全タスク完了| G[validate-gap<br/>アーカイブ]
+  F -->|全タスク完了| G[validate-impl<br/>アーカイブ]
   G --> H[mainへ<br/>squashマージ]
 ```
 

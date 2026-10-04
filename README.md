@@ -93,7 +93,7 @@ D でやることを具体的に書くと、こうなる。
 | Meta XR Core SDK | パススルー、カメラリグ、コントローラー入力。Building Blocks もこれ |
 | Meta XR Simulator | **実機なしで**ヘッドセットの見え方を試せる |
 | Node.js | 次の cc-sdd を入れるためだけに使う |
-| cc-sdd | `/kiro:spec-init` など、**仕様を書くためのコマンド**が使えるようになる |
+| cc-sdd | `/kiro-discovery`・`/kiro-spec-init` など、**仕様を書くためのスキル**が使えるようになる |
 | Git / Git LFS | 履歴の保存。大きいファイルの扱い |
 
 **公式プラグインと Pipeline パッケージは別物。**ここが一番間違えやすい。

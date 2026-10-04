@@ -222,12 +222,15 @@ cc-sddの標準コマンドをそのまま使い、独自拡張はしない（�
 
 | コマンド | 用途 |
 | --- | --- |
-| `/kiro:spec-init` | spec作成 |
-| `/kiro:spec-requirements` | 要件定義 |
-| `/kiro:spec-design` | 技術設計 |
-| `/kiro:spec-tasks` | タスク分解 |
-| `/kiro:spec-impl <spec> <task>` | 実装。必ずタスク番号を指定する |
-| `/kiro:validate-gap` | 仕様と実装の乖離検出（spec完了時） |
+| `/kiro-discovery` | 新しい作業の入口。spec分割を決め、roadmap.mdと各specのbrief.mdを書く |
+| `/kiro-spec-init` | spec作成 |
+| `/kiro-spec-requirements` | 要件定義 |
+| `/kiro-spec-design` | 技術設計 |
+| `/kiro-spec-tasks` | タスク分解 |
+| `/kiro-impl <spec> <task>` | 実装。必ずタスク番号を指定する |
+| `/kiro-validate-impl <spec>` | 仕様と実装の乖離検出（spec完了時） |
+
+cc-sddはスキル形式（`npx cc-sdd --claude-code-skills`）で導入する。旧来のコマンド形式（`/kiro:spec-init` など）には `/kiro-discovery` が無い。`/kiro-spec-quick` と `/kiro-spec-batch` は段階ごとの承認を飛ばすので使わない。
 
 Unityの操作は公式プラグインのスキル（`/unity-cli`、`/unity-package-management`、`/physics-3d-collision`、`/ui-ugui` など）に任せる。**Unity公式プラグインにはXR・Meta Quest向けのスキルがない**ので、Meta XR SDKを使うコードはAIが誤りやすい。designの段階で付録Bのverify-apiを通す。
 
@@ -388,7 +391,7 @@ spec単位ではなく、顧客が理解できる機能のまとまりで承認�
 ## 12. 仕様を古くしない
 
 - 完了したspecはすぐ `.kiro/archive/` に移す（完了PRに含める）。古い仕様をAIが参照しなくなる
-- spec完了時に `/kiro:validate-gap` を実行し、乖離があれば間違っている側を直す
+- spec完了時に `/kiro-validate-impl` を実行し、乖離があれば間違っている側を直す
 - ステアリングは顧客承認のタイミングで15分読み合わせ、読まれていないルールを削る
 - AIの挙動が不安定でも、ルールを足す前にspecを分割する。ルール追加は肥大化の入口になる
 
