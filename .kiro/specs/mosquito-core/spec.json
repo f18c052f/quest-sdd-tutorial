@@ -1,0 +1,22 @@
+{
+  "feature_name": "mosquito-core",
+  "created_at": "2026-10-05T04:38:48Z",
+  "updated_at": "2026-10-05T05:05:38Z",
+  "language": "ja",
+  "phase": "tasks-generated",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": true
+    }
+  },
+  "ready_for_implementation": false
+}
