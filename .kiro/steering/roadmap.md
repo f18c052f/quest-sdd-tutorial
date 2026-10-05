@@ -66,7 +66,7 @@ Core を3つ、Adapter を4つ、シーンを1つの、計8 spec にする。Cor
 
 - [x] spray-hit-core -- 噴射範囲（半角・到達距離）に蚊の位置が入るかを判定する純粋な計算。Dependencies: none
 - [x] mosquito-core -- 蚊の出現ルール、飛行（出現直後から顔へ近づく）、撃墜後の状態、刺された判定（顔からの距離×秒数）。Dependencies: none
-- [ ] round-core -- ラウンドの状態遷移（待機→プレイ→結果→待機）、制限時間、スコア、定位置と離脱判定。Dependencies: none
+- [x] round-core -- ラウンドの状態遷移（待機→プレイ→結果→待機。結果から待機へは受付待ちの秒数のあと）、制限時間、スコア（撃墜+1・刺され-1、0で止める）、定位置と離脱判定（水平距離、警告を出す距離と消す距離を分ける）。Dependencies: none
 - [ ] spray-input-adapter -- 右トリガーと右手の姿勢をインターフェース越しに受け取り、噴射イベントと噴射範囲を出す。Meta XR の実装は XR アセンブリ。Dependencies: spray-hit-core
 - [ ] mosquito-view-adapter -- 蚊のプレハブと出現・飛行の反映。噴射を受けて命中・撃墜させ、刺されたことを通知する。Dependencies: mosquito-core, spray-input-adapter
 - [ ] round-flow-adapter -- トリガーでラウンドを開始し、撃墜・刺されをスコアに反映し、頭の位置を離脱判定に渡す。Dependencies: round-core, mosquito-view-adapter
